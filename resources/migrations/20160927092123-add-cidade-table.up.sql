@@ -1,0 +1,5 @@
+-- 20160927092123
+CREATE TABLE cidade (
+  id serial PRIMARY KEY,
+  nome VARCHAR(200) NOT NULL
+);
