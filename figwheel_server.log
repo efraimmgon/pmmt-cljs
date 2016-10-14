@@ -2879,3 +2879,12 @@ notifying browser that file changed:  out/pmmt/components/geo.js
 [36m----  Compiler Warning : Please see src/cljs/pmmt/components/map.cljs  ----[0m
 [32mSuccessfully compiled "target/cljsbuild/public/js/app.js" in 2.943 seconds.[0m
 notifying browser that file changed:  out/pmmt/components/map.js
+[0mCompiling "target/cljsbuild/public/js/app.js" from ["src/cljs" "src/cljc" "env/dev/cljs"]...[0m
+[32mSuccessfully compiled "target/cljsbuild/public/js/app.js" in 4.801 seconds.[0m
+notifying browser that file changed:  out/pmmt/components/map.js
+[0mCompiling "target/cljsbuild/public/js/app.js" from ["src/cljs" "src/cljc" "env/dev/cljs"]...[0m
+[32mSuccessfully compiled "target/cljsbuild/public/js/app.js" in 2.62 seconds.[0m
+notifying browser that file changed:  out/pmmt/components/map.js
+[0mCompiling "target/cljsbuild/public/js/app.js" from ["src/cljs" "src/cljc" "env/dev/cljs"]...[0m
+[32mSuccessfully compiled "target/cljsbuild/public/js/app.js" in 2.713 seconds.[0m
+notifying browser that file changed:  out/pmmt/components/map.js

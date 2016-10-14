@@ -65,7 +65,7 @@
 (defn handle-request! [fields]
   (ajax/GET "/analise_criminal/geo/dados"
             {:params @fields
-             :handler (.log js/console (str "Success: " %))
+             :handler #(.log js/console (str "Success: " %))
              :error-handler #(.log js/console (str "Error: " %))}))
 
 ;;; Reagent map-container callbacks
@@ -87,13 +87,15 @@
 (defn map-component []
     (r/create-class {:display-name "map-container"
                      :reagent-render map-render
-                     :component-did-mount (fn [comp]
-                                              (let [map-canvas (r/dom-node comp)
-                                                    map-options (clj->js {:center {:lat -11.855275, :lng -55.505966}
-                                                                          :zoom 14
-                                                                          :mapTypeid js/google.maps.MapTypeId.ROADMAP})
-                                                    gmap-instance (js/google.maps.Map. map-canvas map-options)]
-                                                (swap! app-state assoc :gmap gmap-instance)))}))
+                     :component-did-mount
+                     (fn [comp]
+                        (let [map-canvas (r/dom-node comp)
+                              map-options (clj->js {:center {:lat -11.855275, :lng -55.505966}
+                                                    :zoom 14
+                                                    :mapTypeid js/google.maps.MapTypeId.ROADMAP})
+                              gmap-instance (js/google.maps.Map. map-canvas map-options)]
+                          (swap! app-state assoc :gmap gmap-instance)))}))
 
 (defn map-container []
-    [map-component])
+  (fn []
+    [map-component]))

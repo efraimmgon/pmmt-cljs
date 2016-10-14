@@ -15,7 +15,7 @@
 (def NATUREZAS-ID-ALL (reduce (fn [acc n]
                                 (assoc acc (:id n) (:nome n)))
                               ;;test
-                              {} [{:id 1, :nome "nome"}]))
+                              {} (db/get-naturezas)))
 
 (defn adjust-to-geo [row]
   (-> row

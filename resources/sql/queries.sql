@@ -12,9 +12,5 @@ ON document.id = tag_document.doc_id
 -- retrieve all `cidade` records
 SELECT id, nome FROM cidade
 
--- :name get-naturezas :? :*
--- retrive all `natureza` records
-SELECT id, nome FROM natureza
-
 -- :name sample-ocorrencias :? :*
 SELECT * FROM ocorrencia WHERE latitude IS NOT NULL LIMIT 5

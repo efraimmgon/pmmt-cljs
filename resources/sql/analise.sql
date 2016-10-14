@@ -38,3 +38,7 @@ SELECT * FROM ocorrencia
   AND cidade_id = :cidade
   AND latitude is NOT NULL
   AND natureza_id = :natureza
+
+-- :name get-naturezas :? :*
+-- retrive all `natureza` records
+SELECT id, nome FROM natureza
