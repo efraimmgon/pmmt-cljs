@@ -1,44 +1,67 @@
--- :name create-city! :! :n
--- create a `cidade` record
-INSERT INTO cidade (nome) VALUES (:nome)
-
--- :name create-natureza! :! :n
--- create a `natureza` record
-INSERT INTO natureza (nome) VALUES (:nome)
-
--- :name create-ocorrencia! :! :n
--- create a `ocorrencia` record
-INSERT INTO ocorrencia
-(data, cidade_id, local, bairro, via, numero,
- latitude, longitude, natureza_id, hora, periodo)
-VALUES (:data, :cidade_id, :local, :bairro, :via, :numero,
- :latitude, :longitude, :natureza_id, :hora, :periodo)
-
--- :name create-tag! :! :n
--- create a `tag` record
-INSERT INTO tag
-(name, description)
-VALUES (:name, :description)
-
--- :name create-document! :! :n
--- create a `document` record
-INSERT INTO document
-(name, description, url)
-VALUES (:name, :description, :url)
-
--- :name create-tag-document! :! :n
--- create a `tag_document` record
-INSERT INTO tag_document
-(tag_id, doc_id)
-VALUES (:tag_id, :doc_id)
-
--- :name get-geo-data :? :*
-SELECT * FROM ocorrencia
-  WHERE data BETWEEN :data_inicial AND :data_final
-  AND cidade_id = :cidade
-  AND latitude is NOT NULL
-  AND natureza_id = :natureza
-
 -- :name get-naturezas :? :*
 -- retrive all `natureza` records
 SELECT id, nome FROM natureza
+
+-- :name get-ocorrencias-with-geo :? :*
+-- :doc retrieves ocorrencias for geolocalization (lat and lng not null)
+SELECT * FROM ocorrencia
+  WHERE data BETWEEN :data_inicial AND :data_final
+  AND cidade_id = :cidade_id
+  AND latitude is NOT NULL
+/*~ ; :natureza_id
+(cond
+  (number? (:natureza_id params)) "AND natureza_id = :natureza_id"
+  (coll? (:natureza_id params)) "AND natureza_id IN :tuple:natureza_id"
+  :else nil)
+~*/
+--~ (when (:bairro params) "AND bairro LIKE :bairro")
+--~ (when (:via params) "AND via LIKE :via")
+/*~ ; :hora_inicial :hora_final
+(when (and (:hora_inicial params) (:hora_final params))
+  "AND hora BETWEEN :hora_inicial AND :hora_final")
+~*/
+
+-- REPORT ----------------------------------------------------------
+
+
+-- :name get-reports :? :*
+-- :doc fetches reports with usual filtering of fields
+SELECT * FROM ocorrencia AS o
+  INNER JOIN natureza AS n
+  ON o.natureza_id = n.id
+  WHERE o.data BETWEEN :data-inicial AND :data-final
+  AND o.cidade_id = :cidade-id
+--~ (when (:bairro params) "AND o.bairro LIKE :bairro")
+
+-- :name get-reports-raw :? :*
+-- :doc fetches reports with no filtering
+SELECT * FROM ocorrencia AS o
+  INNER JOIN natureza AS n
+  ON o.natureza_id = n.id
+
+-- :name get-reports-count-raw :? :*
+--:doc fetch reports count with no filtering
+SELECT COUNT(*) FROM ocorrencia
+
+-- :name get-reports-count-by-offense-raw :? :*
+SELECT n.nome, COUNT(*) FROM ocorrencia AS o
+  INNER JOIN natureza AS n
+  ON o.natureza_id = n.id
+  GROUP BY n.nome ORDER BY n.nome DESC
+
+-- :name get-reports-count :? :*
+--:doc fetch reports count with usual filtering
+SELECT COUNT(*) FROM ocorrencia AS o
+  WHERE o.data BETWEEN :data-inicial AND :data-final
+  AND o.cidade_id = :cidade-id
+--~ (when (:bairro params) "AND o.bairro LIKE :bairro")
+
+-- :name get-reports-count-by-offense :? :*
+SELECT n.nome, COUNT(*) FROM ocorrencia AS o
+  INNER JOIN natureza AS n
+  ON o.natureza_id = n.id
+  WHERE o.data BETWEEN :data-inicial AND :data-final
+  AND o.cidade_id = :cidade-id
+  AND o.natureza_id IN :tuple:natureza-id
+--~ (when (:bairro params) "AND o.bairro LIKE :bairro")
+  GROUP BY n.nome ORDER BY n.nome DESC

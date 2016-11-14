@@ -1,7 +1,7 @@
 -- 20160927093258
 CREATE TABLE ocorrencia (
   id serial PRIMARY KEY,
-  data DATE,
+  data BIGINT,
   cidade_id INT REFERENCES cidade (id),
   local VARCHAR(500),
   bairro VARCHAR(200),
@@ -10,6 +10,6 @@ CREATE TABLE ocorrencia (
   latitude REAL,
   longitude REAL,
   natureza_id INT REFERENCES  natureza (id),
-  hora TIME,
+  hora BIGINT,
   periodo VARCHAR(200)
 );

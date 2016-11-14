@@ -2,12 +2,15 @@
   (:require [clj-time.core :as t]
             [clj-time.coerce :as tc]
             [clj-time.format :as tf]
-            [clojure.string :refer [lower-case]]))
+            [clojure.string :refer [lower-case includes?]]
+            [pmmt.db.core :as db]))
 
 ;;; Date
 
 (def date-format (tf/formatter "dd/MM/yyyy"))
 
+;;; Date conversions
+; from string
 (defn joda->java-date [date]
   (tc/to-date date))
 
@@ -19,6 +22,15 @@
       (str->joda-date)
       (joda->java-date)))
 
+(defn str->long-date [s]
+  (tc/to-long (str->joda-date s)))
+
+; from long
+(defn long->java-date [n]
+  (-> (tc/from-long n)
+      (joda->java-date)))
+
+; to string
 (defn java->str-date [date]
   (->> date
        (tc/from-date)
@@ -50,9 +62,15 @@
       first
       WEEKDAYS))
 
+(defn long->weekday-str [n]
+  (-> (tf/unparse (tf/formatters :rfc822) (tc/from-long n))
+      (clojure.string/split #",")
+      first
+      WEEKDAYS))
+
 ;;; Time
 
-(def time-format (tf/formatter "hh:mm"))
+(def time-format (tf/formatter "HH:mm"))
 
 (defn joda->java-time [time]
   (tc/to-date time))
@@ -70,6 +88,8 @@
        (tc/from-date)
        (tf/unparse time-format)))
 
+(defn str->long-time [s]
+  (tc/to-long (str->joda-time s)))
 
 ;;; Utils
 
@@ -78,4 +98,66 @@
    string
    java.text.Normalizer$Form/NFKD))
 
+(defn fluctuation
+  "Calculate variation relative from b to a; if a < b, fluctuation means
+  increase, else if a > b, fluctuation means decrease."
+  [a b]
+  (letfn [(calculate [a b]
+                     (if (= b 0)
+                       0
+                       (-> (- a b) (-) (/ b) (* 100) (double) (Math/round))))]
+    (if (< a b)
+      (calculate a b)
+      (calculate b a))))
+
+
 ;;; Global vars
+;;; Defined as functions, since we can't access the db at compile time.
+
+(def NATUREZAS-ALL
+  (memoize #(db/get-naturezas)))
+
+(def NATUREZAS-ID-ALL
+  (memoize
+   #(reduce (fn [acc n]
+              (assoc acc (:id n) (:nome n)))
+            {} (NATUREZAS-ALL))))
+
+(def ROUBO
+  (memoize
+   (fn []
+     (filter #(includes? (:nome %) "Roubo")
+              (NATUREZAS-ALL)))))
+
+(def FURTO
+  (memoize
+   (fn []
+     (filter #(includes? (:nome %) "Furto")
+              (NATUREZAS-ALL)))))
+
+(def HOMICIDIO
+  (memoize
+   (fn []
+     (filter #(includes? (:nome %) (NFKD "Homicídio"))
+              (NATUREZAS-ALL)))))
+
+(def TRAFICO
+  (memoize
+   (fn []
+     (filter #(includes? (:nome %) (NFKD "Tráfico"))
+              (NATUREZAS-ALL)))))
+
+(def DROGAS
+  (memoize
+   (fn []
+     (filter #(includes? (:nome %) "Drogas")
+              (NATUREZAS-ALL)))))
+
+(defn NATUREZAS-SELECTED []
+  (concat (ROUBO) (FURTO) (HOMICIDIO) (TRAFICO)))
+
+
+(defn NATUREZAS-ID-SELECTED []
+  (reduce (fn [acc n]
+             (assoc acc (:id n) (:nome n)))
+          {} (NATUREZAS-SELECTED)))

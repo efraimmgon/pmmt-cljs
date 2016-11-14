@@ -2,10 +2,29 @@
   (:require [ring.util.http-response :refer :all]
             [clojure.tools.logging :as log]
             [compojure.api.sweet :refer :all]
+            [compojure.api.upload :refer
+             [wrap-multipart-params TempFileUpload]]
             [schema.core :as s]
             [pmmt.routes.home :as home]
+            [pmmt.routes.report :as report]
             [pmmt.routes.geo :as geo]
-            [pmmt.db.core :as db]))
+            [pmmt.db.core :as db]
+            [pmmt.routes.admin :as admin]
+            [pmmt.routes.services.auth :as auth]
+            [pmmt.routes.services.upload :as upload]))
+
+; Misc -----------------------------------------------------------
+
+(s/defschema UserRegistration
+             {:id String
+              :pass String
+              :pass-confirm String})
+
+(s/defschema Result
+             {:result s/Keyword
+              (s/optional-key :message) String})
+
+; Biblioteca -----------------------------------------------------
 
 (s/defschema Tag
              {:id s/Int
@@ -29,15 +48,36 @@
              {:date String
               :days String})
 
+; Geo ----------------------------------------------------------
 (s/defschema GeoRequest
-             {:cidade Long
-              :natureza Long
-              :data_inicial String
-              :data_final String
-              (s/optional-key :bairro) String
-              (s/optional-key :via) String
-              (s/optional-key :hora_inicial) String
-              (s/optional-key :hora_final) String})
+             {:cidade_id s/Int
+              ; don't know how to coerce this here
+              ; should be three options: number, coll, and string
+              :natureza_id s/Str
+              :data_inicial s/Str
+              :data_final s/Str
+              (s/optional-key :bairro) s/Str
+              (s/optional-key :via) s/Str
+              (s/optional-key :hora_inicial) s/Str
+              (s/optional-key :hora_final) s/Str})
+
+; Relatório -----------------------------------------------------
+
+(s/defschema ReportRequest
+             {:cidade-id s/Int
+              :data-inicial-a s/Str
+              :data-final-a s/Str
+              :data-inicial-b s/Str
+              :data-final-b s/Str
+              (s/optional-key :bairro) s/Str
+              ; `Naturezas`
+              (s/optional-key :roubo) s/Bool
+              (s/optional-key :furto) s/Bool
+              (s/optional-key :trafico) s/Bool
+              (s/optional-key :homicidio) s/Bool
+              ; `Outros`
+              (s/optional-key :dias-da-semana) s/Bool
+              (s/optional-key :horarios) s/Bool})
 
 (defapi service-routes
   {:swagger {:ui "/swagger-ui"
@@ -45,7 +85,23 @@
              :data {:info {:version "1.0.0"
                            :title "PMMT Public API"
                            :description "Public Services"}}}}
+  ; auth
+  (POST "/register" req
+        :return Result
+        :body [user UserRegistration]
+        :summary "register a new user"
+        (auth/register! req user))
+  (POST "/login" req
+        :header-params [authorization :- String]
+        :summary "log in the user and create a session"
+        :return Result
+        (auth/login! req authorization))
+  (POST "/logout" req
+        :summary "remove user session"
+        :return Result
+        (auth/logout!))
 
+  ; biblioteca
   (GET "/tags-and-documents" req
        :summary "retrieve all tags and respective documents"
        :return [TagDocuments]
@@ -56,20 +112,38 @@
        :query-params [date :- String, days :- Long]
        :return String
        (home/time-delta date days))
-  (GET "/cidades" []
-       :summary "List all `cidade` records"
-       :return [{:id Long, :nome String}]
-       (geo/get-cities))
-  (GET "/naturezas" []
-       :summary "List all `natureza` records"
-       :return [{:id Long, :nome String}]
-       (geo/get-naturezas))
+
   ;; Analise Criminal
-  (GET "/analise-criminal/geo/dados" req
+  (GET "/analise-criminal/geo/dados" []
        :summary "Handle a user request and return a map response"
-       :query-params [params GeoRequest]
-       ; TODO: :return [GeoResponse]
-       (geo/geo-dados params))
-  ;; test route
-  (GET "/sample-ocorrencias" []
-       (ok (db/sample-ocorrencias))))
+       :query [georeq GeoRequest]
+       ; todo: `return`
+       (geo/geo-dados georeq))
+  (GET "/analise-criminal/relatorio/dados" []
+       :summary "Handle a user request and return a map response"
+       :query [reportreq ReportRequest]
+       ; todo: `return`
+       (report/report-data reportreq)))
+
+(defapi restricted-service-routes
+  {:swagger {:ui "/swagger-ui-private"
+             :spec "/swagger-private.json"
+             :data {:info {:version "1.0.0"
+                           :title "PMMT API"
+                           :description "Private Services"}}}}
+  (GET "/db/:table" []
+       :summary "Retrieves all rows in the given table"
+       :path-params [table :- String]
+       (admin/fetch-rows table))
+  (GET "/db/:table/:field/:value" []
+       :summary "Retrieves the rows matching the value in the given field and table"
+       :path-params [table :- String
+                     field :- String
+                     value :- String]
+       (admin/fetch-rows-by-value table field value))
+  (POST "/upload" req
+        :multipart-params [file :- TempFileUpload]
+        :middleware [wrap-multipart-params]
+        :summary "handles reports csv file upload"
+        :return Result
+        (upload/save-data! file)))

@@ -21,6 +21,12 @@
 
 (conman/bind-connection *db* "sql/queries.sql" "sql/analise.sql")
 
+(defn delete-account! [id]
+  (conman/with-transaction
+   [*db*]
+   ; defined in queries.sql
+   (delete-user! {:id id})))
+
 (defn to-date [^java.sql.Date sql-date]
   (-> sql-date (.getTime) (java.util.Date.)))
 

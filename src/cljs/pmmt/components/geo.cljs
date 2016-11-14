@@ -1,85 +1,14 @@
 (ns pmmt.components.geo
-  (:require [reagent.core :as r :refer [atom]]
-            [reagent.session :as session]
+  (:require [clojure.string :refer [includes?]]
+            [reagent.core :as r :refer [atom]]
+            [re-frame.core :as re-frame :refer
+             [reg-event-db reg-event-fx reg-sub subscribe dispatch dispatch-sync]]
+            [day8.re-frame.http-fx]
             [ajax.core :as ajax]
             [pmmt.components.common :as c]
             [pmmt.components.map :as m]))
 
-(defn fetch-cidades! []
-  (when-not (session/get :cities)
-    (ajax/GET "/cidades"
-              {:handler #(do (session/put! :cities %))
-               :error-handler #(.log js/console (str "Error: " %))})))
-
-(defn fetch-naturezas! []
-  (when-not (session/get :naturezas))
-    (ajax/GET "/naturezas"
-              {:handler #(session/put! :naturezas %)
-               :error-handler #(.log js/console (str "Error: " %))}))
-
-(defn city-options []
-  (into []
-    (map (fn [{:keys [id nome]}]
-           {:value id
-            :display nome})
-         (session/get :cities))))
-
-(defn natureza-options []
-  (into []
-    (map (fn [{:keys [id nome]}]
-           {:value id
-            :display nome})
-         (session/get :naturezas))))
-
-(defonce marker-options
-  [{:display "Marcador básico"
-    :value "basicMarker"}
-   {:display "Mapa de calor"
-    :value "heatmap"}])
-
-;; TODO: code to change marker style
-(defn settings-modal []
-  (let [field (atom {})]
-    (fn []
-      [c/modal
-       [:div "Configurações"]
-       [:div
-        [c/select-form "Tipo de marcador" :marker_style marker-options field]]
-       [:div
-        [:button.btn.btn-primary
-         {:on-click #(session/remove! :modal)}
-         "Escolher"]
-        [:button.btn.btn-danger
-         {:on-click #(session/remove! :modal)}
-         "Cancelar"]]])))
-
-;; TODO rewrite map.js in ClojureScript
-(defn geo-form-modal []
-  ;; TODO: errors atom for validation
-  (let [fields (atom {})]
-    (fn []
-      [c/modal
-       [:div "Opções de seleção"]
-       [:div
-        [:fieldset
-         [:legend "Básicas"]
-         [c/select-form "Cidade" :cidade (city-options) fields]
-         [c/select-form "Natureza" :natureza (natureza-options) fields]
-         [c/text-input "Data inicial" :data_inicial "dd/mm/aaaa" fields]
-         [c/text-input "Data final" :data_final "dd/mm/aaaa" fields]]
-        [:fieldset
-         [:legend "Avançadas"]
-         [c/text-input "Bairro" :bairro "ex: Centro" fields true]
-         [c/text-input "Via" :via "ex: Avenida Central" fields true]
-         [c/text-input "Hora inicial" :hora_inicial "hh/mm" fields true]
-         [c/text-input "Hora final" :hora_final "hh/mm" fields true]]]
-       [:div
-        [:button.btn.btn-primary
-         {:on-click #(m/handle-request! fields)}
-         "Buscar"]
-        [:button.btn.btn-danger
-         {:on-click #(session/remove! :modal)}
-         "Cancelar"]]])))
+; aux. html ---------------------------------------------------------------
 
 (defn help-text [display?]
   [:div.tab-content
@@ -113,44 +42,132 @@
          "Como usar?"]]
        [help-text display?]])))
 
-(defn init-state! []
-  (fetch-cidades!)
-  (fetch-naturezas!)
-  (m/get-sample-data!))
+; options for geo-form-modal form ----------------------------------------
 
+(defn naturezas->select-opts [options display]
+  (if (> (count options) 1)
+    (reduce (fn [acc m]
+              (update acc :value conj (:id m)))
+            {:display display, :value []} options)
+    {:display display, :value (:id (first options))}))
 
+(defn get-incident [s]
+  (filter #(clojure.string/includes? (:nome %) (.normalize s "NFKD"))
+          @(subscribe [:naturezas])))
 
-;;; map.js
+(defn extra-opts []
+  (let [names ["Homicídio" "Tráfico" "Drogas"]
+        rows (doall (map get-incident names))]
+    (->>
+     (map (fn [[opts display]]
+            (naturezas->select-opts opts display))
+          (map vector rows names))
+     (concat [{:value "todas" :display "Todas"}]))))
 
-;;; The actual page that reagent will render
+(defn format-opts [options value-key display-key]
+  (into []
+    (map (fn [m]
+           {:value (get m value-key)
+            :display (get m display-key)})
+         options)))
+
+; options for settings-modal ---------------------------------------------
+
+(def marker-options
+  [{:display "Marcador básico"
+    :value :basic-marker}
+   {:display "Mapa de calor"
+    :value :heatmap}])
+
+; Forms ------------------------------------------------------------------
+
+(defn settings-modal []
+  (let [field (atom {})]
+    (fn []
+      [c/modal
+       [:div "Configurações"]
+       [:div
+        [c/select-form "Tipo de marcador" :marker-type marker-options field]]
+       [:div
+        [:button.btn.btn-primary
+         {:on-click #(dispatch [:update-marker-type (:marker-type @field)])}
+         "Escolher"]
+        [:button.btn.btn-danger
+         {:on-click #(dispatch [:remove-modal])}
+         "Cancelar"]]])))
+
+(defn geo-form-modal []
+  (let [fields (atom {})
+        errors (atom {})
+        cities (subscribe [:cities])
+        naturezas (subscribe [:naturezas])
+        city-form-opts (format-opts @cities :id :nome)
+        ; group related incidents in `extra-opts`, so all their ids can be
+        ; selected at once
+        natureza-form-opts (concat (extra-opts) (format-opts @naturezas :id :nome))]
+    (fn []
+      [c/modal
+       [:div "Opções de seleção"]
+       [:div
+        [:div.well.well-sm
+         [:strong "* campo obrigatório"]]
+        [:fieldset
+         [:legend "Básicas"]
+         [c/select-form "Cidade" :cidade_id city-form-opts fields]
+         [c/select-form "Natureza" :natureza_id natureza-form-opts fields]
+         [c/display-error errors :data_inicial]
+         [c/text-input "Data inicial" :data_inicial "dd/mm/aaaa" fields]
+         [c/display-error errors :data_final]
+         [c/text-input "Data final" :data_final "dd/mm/aaaa" fields]]
+        [:fieldset
+         [:legend "Avançadas"]
+         [c/text-input "Bairro" :bairro "ex: Centro" fields true]
+         [c/text-input "Via" :via "ex: Avenida Central" fields true]
+         [c/display-error errors :hora_inicial]
+         [c/text-input "Hora inicial" :hora_inicial "hh:mm" fields true]
+         [c/display-error errors :hora_final]
+         [c/text-input "Hora final" :hora_final "hh:mm" fields true]]]
+       [:div
+        [:button.btn.btn-primary
+         {:on-click #(do (dispatch [:reset-map-state])
+                         (dispatch [:query-geo-dados fields errors]))}
+         "Buscar"]
+        [:button.btn.btn-danger
+         {:on-click #(dispatch [:remove-modal])}
+         "Cancelar"]]])))
+
+; Buttons -----------------------------------------------------------------
+
+(defn settings-button []
+   [:span
+     [:button.btn.btn-default
+      {:on-click #(dispatch [:modal settings-modal])}
+      "Configurações"] " "])
+
+(defn selection-options-button []
+   [:span
+     [:button.btn.btn-default
+       {:on-click #(dispatch [:modal geo-form-modal])}
+       "Opções de seleção"] " "])
+
+; main page ---------------------------------------------------------------
 
 (defn geo-page []
-  (init-state!)
-  [:div.container
-   [:link {:rel "stylesheet"
-           :type "text/css"
-           :href "/css/jquery.datetimepicker.min.css"}]
-   [:div.page-header
-    [:h1 "Georreferenciamento "
-     [:small "de registros criminais"]]]
-   ;; gmap
-   [m/map-container]
-   [:br]
-   [howto-panel]
-   [:br]
-   [:div
-     [:button.btn
-       {:href "#settings"
-        :on-click (fn [e]
-                    (.preventDefault e)
-                    (session/put! :modal settings-modal))}
-       "Configurações"]]
-   [:br]
-   [:div
-     [:button.btn
-      {:href "#selection-options"
-       :on-click #(do (.preventDefault %)
-                      (session/put! :modal geo-form-modal))}
-      "Opções de seleção"]
-    ;; div
-    [:p (str (first (session/get :sample-ocorrencias)))]]])
+  (let [show-table? (subscribe [:get-db :show-table?])]
+    (dispatch-sync [:query-cities])
+    (dispatch-sync [:query-naturezas])
+    (fn []
+      [:div.container
+       [:div.page-header
+        [:h1 "Georreferenciamento "
+         [:small "de registros criminais"]]]
+       ;; gmap
+       [m/map-outer]
+       [:br]
+       [howto-panel]
+       [:br]
+       [:div
+        [settings-button]
+        [selection-options-button]]
+       (when @show-table?
+         [m/table])])))

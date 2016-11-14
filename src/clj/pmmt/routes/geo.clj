@@ -1,37 +1,47 @@
 (ns pmmt.routes.geo
   (:require [ring.util.http-response :as response]
-            [clojure.java.jdbc :as sql]
+            [clj-time.coerce :as tc]
             [pmmt.routes.common :as c]
             [pmmt.db.core :as db :refer [*db*]]))
 
+
+;;; helpers
+
+(defn geo-db-coercer
+  [params]
+  (let [like-fn (fn [s] (and s (str "%" (c/NFKD s) "%")))
+        str->long-date (fn [s] (and s (c/str->long-date s)))
+        str->long-time (fn [s] (and s (c/str->long-time s)))
+        db-params (-> params
+                      (update :natureza_id clojure.edn/read-string)
+                      (update :data_inicial str->long-date)
+                      (update :data_final str->long-date)
+                      (update :bairro like-fn)
+                      (update :via like-fn)
+                      (update :hora_inicial str->long-time)
+                      (update :hora_final str->long-time))]
+    db-params))
+
+;;; core
+
 (defn get-cities []
-  (-> (db/get-cities)
-      (response/ok)))
+  (response/ok
+   (db/get-cities)))
 
 (defn get-naturezas []
-  (-> (db/get-naturezas)
-      (response/ok)))
-
-(def NATUREZAS-ID-ALL (reduce (fn [acc n]
-                                (assoc acc (:id n) (:nome n)))
-                              ;;test
-                              {} (db/get-naturezas)))
+  (response/ok
+   (db/get-naturezas)))
 
 (defn adjust-to-geo [row]
   (-> row
       ;; TODO: join the nat name in the db
-      ;; TODO: create a timestamp field in the db for the date and time
-      (assoc :natureza (get NATUREZAS-ID-ALL (:natureza_id row)))
-      (update :hora c/java->str-time)))
+      (assoc :natureza (get (c/NATUREZAS-ID-ALL) (:natureza_id row)))))
 
-(defn get-geo-data [{:keys [cidade natureza data_inicial data_final]}]
-  (let [rows (db/get-geo-data
-              {:cidade (Integer. cidade)
-               :natureza (Integer. natureza)
-               :data_inicial (c/str->java-date data_inicial)
-               :data_final (c/str->java-date data_final)})]
+(defn get-geo-data [params]
+  (let [rows (db/get-ocorrencias-with-geo
+              (geo-db-coercer params))]
     (map adjust-to-geo rows)))
 
 (defn geo-dados [params]
-  (-> (get-geo-data params)
-      (response/ok)))
+  (response/ok
+   (get-geo-data params)))

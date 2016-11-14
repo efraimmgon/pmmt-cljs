@@ -1,49 +1,103 @@
 (ns pmmt.components.utilitarios
   (:require [reagent.core :refer [atom]]
+            [re-frame.core :refer
+             [reg-event-db reg-event-fx reg-sub subscribe dispatch dispatch-sync]]
+            [day8.re-frame.http-fx]
             [ajax.core :as ajax]
-            [pmmt.components.common :as c]))
+            [pmmt.components.common :as c]
+            [pmmt.validation :as v]))
 
-(defonce app-state (atom nil))
+(def app-schema {:time-delta {:date :date-init
+                              :days :int
+                              :end :date}})
+(declare time-delta-result-modal)
 
-(defn calculate-delta! [fields]
-  (ajax/GET "/calculate-delta"
-            {:params @fields
-             :handler #(do
-                        (reset! app-state
-                               (assoc @fields :end %))
-                        (.log js/console (str @app-state)))
+; Events ---------------------------------------------------------------
 
-             :error-handler #(.log js/console (str "error: " %))}))
+(reg-event-fx
+ :time-delta-response
+ (fn [{:keys [db]} [_ fields response]]
+   {:dispatch [:modal time-delta-result-modal]
+    :db (-> db
+           (assoc-in [:time-delta :date] (:date @fields))
+           (assoc-in [:time-delta :days] (:days @fields))
+           (assoc-in [:time-delta :end] response))}))
+
+
+
+(reg-event-fx
+ :calculate-delta
+ (fn [{:keys [db]} [_ fields errors]]
+   (print "Fields:" @fields)
+   (if-let [err (v/validate-util-date-calc @fields)]
+     (do (reset! errors err)
+         {:db db})
+     {:http-xhrio {:method :get
+                   :uri "/calculate-delta"
+                   :params @fields
+                   :on-success [:time-delta-response fields]
+                   :response-format (ajax/json-response-format {:keywords? true})}
+      :db db})))
+
+
+; Subscriptions ---------------------------------------------------------
+
+(reg-sub
+ :time-delta-result
+ (fn [db _]
+   (:time-delta db)))
+
+; Components ------------------------------------------------------------
 
 (defn delta-calculator-form []
-  (let [fields (atom {})]
+  (let [fields (atom {})
+        errors (atom {})]
     (fn []
-      [:div.form-horizontal.well
-       [:fieldset
-        [:legend "Cálculo de dias de afastamento"]
-        [:div.row
-         [:div.col-md-6
-          [c/text-input "Data de início" :date "dd/mm/aaaa" fields]]
-         [:div.col-md-6
-          [c/text-input "Quantidade de dias" :days "dias" fields]]
+      [c/modal
+       [:div "Cálculo de dias de fastamento"]
+       [:div
+        [c/text-input "Data de início" :date "dd/mm/aaaa" fields]
+        [c/display-error errors :date]
+        [c/number-input "Quantidade de dias" :days "dias" fields]
+        [c/display-error errors :days]]
+       [:div
+        [:button.btn.btn-primary
+         ;include fields errors
+         {:on-click #(dispatch [:calculate-delta fields errors])}
+         "Calcular"]
+        [:button.btn.btn-danger
+         {:on-click #(dispatch [:remove-modal])}
+         "Cancelar"]]])))
 
-         [:button.btn-btn-primary
-          {:on-click #(calculate-delta! fields)}
-          "Calcular"]]]])))
+(defn time-delta-result-modal []
+  (let [result (subscribe [:time-delta-result])]
+    (fn []
+      [c/modal
+       [:div "Cálculo de dias de fastamento || Resultado"]
+       [:div
+        [:table.table.table-bordered>tbody
+         [:tr
+          [:th "Data inicial"]
+          [:th "Data final"]
+          [:th "Dias"]]
+         [:tr
+          [:td (:date @result)]
+          [:td (:end @result)]
+          [:td (:days @result)]]]]
+       [:div
+        [:button.btn.btn-primary
+         {:on-click #(dispatch [:modal delta-calculator-form])}
+         "Novo cálculo"]
+        [:button.btn.btn-danger
+         {:on-click #(dispatch [:remove-modal])}
+         "Sair"]]])))
 
-(defn timedelta-result []
-  (when-let [result @app-state]
-    [:div
-     [:h4 "Resultado"]
-     [:table.table.table-bordered
-      [:tr
-       [:th "Data inicial"]
-       [:th "Data final"]
-       [:th "Dias"]]
-      [:tr
-       [:td (:date @app-state)]
-       [:td (:end @app-state)]
-       [:td (:days @app-state)]]]]))
+(defn delta-calculator-button []
+  [:button.btn.btn-default
+   {:on-click #(dispatch [:modal delta-calculator-form])}
+   "Calcular dias de afastamento"])
+
+; Main page -------------------------------------------------------------
 
 (defn utilitarios-page []
   [:div.container
@@ -53,6 +107,4 @@
    [:div.panel.panel-primary
     [:div.panel-heading
      [:h3 "Aplicativos"]]]
-
-   [delta-calculator-form]
-   [timedelta-result]])
+   [delta-calculator-button]])

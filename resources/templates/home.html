@@ -33,7 +33,7 @@
     {% script "/js/jquery.js" %}
     {% style "/assets/bootstrap/css/bootstrap.min.css" %}
     {% style "/css/bootstrap.min.css" %}
-
+    <script type="text/javascript" src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <!-- google maps: /analise-criminal/geo -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7ekvGGHxVTwTVcpi073GOERnktqvmYz8&libraries=geometry,visualization"></script>
     {% script "/js/styledMarkers.js" %}
@@ -43,9 +43,6 @@
     {% style "/css/jquery.datetimepicker.min.css" %}
     {% script "/js/jquery.datetimepicker.full.min.js" %}
 
-    <!-- custom css -->
-    {% style "/css/screen.css" %}
-
 <!--
     {% style "/assets/font-awesome/css/font-awesome.min.css" %}
 -->
@@ -53,6 +50,7 @@
     <script type="text/javascript">
         var context = "{{servlet-context}}";
         var csrfToken = "{{csrf-token}}";
+        var identity = {{identity|json|safe}};
     </script>
 
     <script type="text/javascript">
@@ -83,6 +81,9 @@
 
     });
     </script>
+
+    <!-- custom css -->
+    {% style "/css/screen.css" %}
 
     {% script "/js/app.js" %}
   </body>
