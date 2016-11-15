@@ -16,8 +16,6 @@
              (conj vals v)])
           [[] []] coll))
 
-; core ----------------------------------------------------------------
-
 (defn report-db-coercer
   [{:keys [data-inicial-a data-final-a data-inicial-b data-final-b] :as params}]
   (let [like-fn (fn [s] (and s (str "%" (c/NFKD s) "%")))
@@ -32,6 +30,8 @@
         (update :trafico #(when % (map :id (c/TRAFICO))))
         (update :homicidio #(when % (map :id (c/HOMICIDIO))))
         (update :bairro like-fn))))
+
+; core ----------------------------------------------------------------
 
 (defn compare-incidents [params-a params-b]
   (let [get-reports-count-by-offense
@@ -81,7 +81,7 @@
 
 (defn select-distinct-fields
   [coll]
-  ;; we need an orderd map, since we'll can `keys` and `vals` later on
+  ;; we need an orderd map, since we'll call `keys` and `vals` later on
   (array-map
     :naturezas (select-distinct coll :nome)
     :bairros (select-distinct (remove #(empty? (:bairro %)) coll) :bairro)
@@ -179,12 +179,27 @@
                   :data-final data-final-b}
         [count-a count-b] (map #(first (db/get-reports-count %)) [params-a params-b])
         [period-a period-b] (map db/get-reports [params-a params-b])
-        [distinct-fields-a distinct-fields-b] (map select-distinct-fields [period-a period-b])
+        [distinct-fields-a distinct-fields-b]
+        (map select-distinct-fields [period-a period-b])
+        ; plots
+        [pie-a pie-b]
+        (map format-plot-pie-data
+             ["naturezas a" "naturezas b"]
+             (map :naturezas [distinct-fields-a distinct-fields-b]))
         ; if those keys are not chosen their value is nil
-        optionals-incidents (process-incidents period-a period-b (remove #(nil? (second %)) (select-keys params [:roubo :furto :trafico :homicidio])))
-        optionals-neighborhood (process-neighborhood period-a period-b (remove #(nil? (second %)) (select-keys params [:bairro])))
-        optionals-weekdays (process-weekdays period-a period-b (:dias-da-semana params))
-        optionals-horarios (process-time-periods period-a period-b (:horarios params))]
+        optionals-incidents
+        (process-incidents period-a period-b
+                           (remove #(nil? (second %))
+                                   (select-keys params
+                                                [:roubo :furto :trafico :homicidio])))
+        optionals-neighborhood
+        (process-neighborhood period-a period-b 
+                              (remove #(nil? (second %))
+                                      (select-keys params [:bairro])))
+        optionals-weekdays
+        (process-weekdays period-a period-b (:dias-da-semana params))
+        optionals-horarios
+        (process-time-periods period-a period-b (:horarios params))]
 
     ;; result map
     {:total {:a (:count count-a)
@@ -200,9 +215,9 @@
                                (repeat "Período B")
                                (keys distinct-fields-b)
                                (vals distinct-fields-b))}}
-             :pie {:ids ["naturezas-a" "naturezas-b"]
-                   :vals {:a (format-plot-pie-data "naturezas-a" (:naturezas distinct-fields-a))
-                          :b (format-plot-pie-data "naturezas-b" (:naturezas distinct-fields-b))}}}
+             :pie {:ids ["naturezas a" "naturezas b"]
+                   :vals {:a pie-a
+                          :b pie-b}}}
      ; since these fields are optional they'll return nil if not selected
      :optionals (apply concat (remove nil? [optionals-incidents optionals-neighborhood
                                             optionals-weekdays optionals-horarios]))}))

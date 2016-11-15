@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
   <head>
-      <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Welcome to pmmt</title>
-
+    <meta name="description" content="PMMT project">
+    <meta name="author" content="Efraim Augusto Gonçalves">
+    <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PMMT</title>
   </head>
   <body>
     <div id="navbar"></div>
@@ -39,47 +40,18 @@
     {% script "/js/styledMarkers.js" %}
     {% script "/js/oms.js" %}
 
-    <!-- datetime picker -->
+    <!-- datetime picker
     {% style "/css/jquery.datetimepicker.min.css" %}
     {% script "/js/jquery.datetimepicker.full.min.js" %}
+    -->
 
-<!--
     {% style "/assets/font-awesome/css/font-awesome.min.css" %}
--->
+
 
     <script type="text/javascript">
         var context = "{{servlet-context}}";
         var csrfToken = "{{csrf-token}}";
         var identity = {{identity|json|safe}};
-    </script>
-
-    <script type="text/javascript">
-    $('document').ready(function() {
-    	jQuery.datetimepicker.setLocale('pt');
-
-    	var months = [
-    		'Janeiro', 'Fevereiro', 'Março', 'Abril',
-    		'Maio', 'Junho', 'Julho', 'Agosto',
-    		'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-    	];
-
-    	var daysOfWeek = [
-    		'Dom', 'Seg', 'Ter', 'Qua',
-    		'Qui', 'Sex', 'Sab',
-    	];
-
-    	$('#start').datetimepicker({
-    		i18n: {
-    			pt: {
-    				months: months,
-    				daysOfWeek: daysOfWeek
-    			}
-    		},
-    		timepicker: false,
-    		format: 'd/m/Y'
-    	});
-
-    });
     </script>
 
     <!-- custom css -->

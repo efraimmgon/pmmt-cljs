@@ -26,13 +26,6 @@ WHERE id = :id
 DELETE FROM users
 WHERE id = :id
 
--- OCORRENCIA
-
--- :name get-reports :? :*
--- retrieve all `ocorrencia` records
-SELECT * FROM ocorrencia
-
-
 -- CIDADE
 
 -- :name get-cities :? :*
