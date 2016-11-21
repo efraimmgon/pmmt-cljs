@@ -37,7 +37,8 @@
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [jayq "2.5.4"]
                  [re-frame "0.8.0"]
-                 [day8.re-frame/http-fx "0.1.2"]]
+                 [day8.re-frame/http-fx "0.1.2"]
+                 [org.clojure.bago/cljs-dynamic-resources "0.0.3"]]
 
 
   :min-lein-version "2.0.0"

@@ -6,6 +6,9 @@
     <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PMMT</title>
+    {% style "/assets/bootstrap/css/bootstrap.min.css" %}
+    {% style "/css/bootstrap.min.css" %}
+    {% style "/assets/font-awesome/css/font-awesome.min.css" %}
   </head>
   <body>
     <div id="navbar"></div>
@@ -32,21 +35,11 @@
 
     <!-- scripts and styles -->
     {% script "/js/jquery.js" %}
-    {% style "/assets/bootstrap/css/bootstrap.min.css" %}
-    {% style "/css/bootstrap.min.css" %}
-    <script type="text/javascript" src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <!-- google maps: /analise-criminal/geo -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7ekvGGHxVTwTVcpi073GOERnktqvmYz8&libraries=geometry,visualization"></script>
-    {% script "/js/styledMarkers.js" %}
-    {% script "/js/oms.js" %}
-
+    
     <!-- datetime picker
     {% style "/css/jquery.datetimepicker.min.css" %}
     {% script "/js/jquery.datetimepicker.full.min.js" %}
     -->
-
-    {% style "/assets/font-awesome/css/font-awesome.min.css" %}
-
 
     <script type="text/javascript">
         var context = "{{servlet-context}}";
@@ -56,6 +49,7 @@
 
     <!-- custom css -->
     {% style "/css/screen.css" %}
+    <div id="scripts"></div>
 
     {% script "/js/app.js" %}
   </body>

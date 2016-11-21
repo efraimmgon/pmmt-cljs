@@ -8,13 +8,15 @@
             [goog.events :as events]
             [goog.history.EventType :as HistoryEventType]
             [pmmt.handlers]
+            [pmmt.subs]
             [pmmt.components.registration :as reg]
             [pmmt.components.login :as login]
             [pmmt.components.utilitarios :as u]
             [pmmt.components.biblioteca :as b]
             [pmmt.components.geo :as geo]
             [pmmt.components.report :as report]
-            [pmmt.components.admin :as admin])
+            [pmmt.components.admin :as admin]
+            [pmmt.components.admin.core :as adm])
   (:import goog.History))
 
 (enable-console-print!)
@@ -66,9 +68,8 @@
 
 (defn navbar []
   (fn []
-    [:nav
-     {:role "navigation"
-      :class "navbar navbar-default"}
+    [:nav#navbar.navbar.navbar-default
+     {:role "navigation"}
      [:div.navbar-header
       [:button
        {:data-target "#navbarCollapse"
@@ -85,7 +86,8 @@
        [nav-link "#/analise-criminal/geo/" "Georreferenciamento" :geo]
        [nav-link "#/analise-criminal/relatorio/" "Relatório" :relatorio]
        [nav-link "#/biblioteca/" "Biblioteca" :biblioteca]
-       [nav-link "#/utilitarios/" "Utilitários" :utilitarios]]
+       [nav-link "#/utilitarios/" "Utilitários" :utilitarios]
+       [nav-link "#/admin-old/" "Admin-old" :admin-old]]
       [user-menu]]]))
 
 (defn home-page []
@@ -107,15 +109,22 @@
 
 (def pages
   {:home #'home-page
-   :admin #'admin/admin-page
+   :admin #'adm/admin-page
+   :admin-old #'admin/admin-page
    :utilitarios #'u/utilitarios-page
    :biblioteca #'b/biblioteca-page
    :relatorio #'report/report-page
    :geo #'geo/geo-page})
 
 (defn page []
-  (let [page (subscribe [:page])]
+  (let [page (subscribe [:page])
+        reload? (atom false)]
     (fn []
+      ; hack to clear admin and other pages breaks
+      (when (= @page :admin)
+        (reset! reload? true))
+      (when (and @reload? (= @page :home))
+        (.reload js/location))
       [:div
        [modal]
        [(pages @page)]])))
@@ -129,6 +138,9 @@
 
 (secretary/defroute "/admin" []
   (dispatch [:page :admin]))
+
+(secretary/defroute "/admin-old/" []
+  (dispatch [:page :admin-old]))
 
 (secretary/defroute "/utilitarios/" []
   (dispatch [:page :utilitarios]))
@@ -162,6 +174,7 @@
 
 (defn init! []
   (hook-browser-navigation!)
+  (dispatch-sync [:set-initial-state])
   (dispatch-sync [:page :home])
   (dispatch-sync [:set-identity js/identity])
   (mount-components))

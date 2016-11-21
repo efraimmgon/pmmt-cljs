@@ -5,6 +5,7 @@
              [reg-event-db reg-event-fx reg-sub subscribe dispatch dispatch-sync]]
             [day8.re-frame.http-fx]
             [ajax.core :as ajax]
+            [cljs-dynamic-resources.core :as cdr]
             [pmmt.components.common :as c]
             [pmmt.components.map :as m]))
 
@@ -151,18 +152,25 @@
        "Opções de seleção"] " "])
 
 ; main page ---------------------------------------------------------------
+(def scripts [{:src "https://maps.googleapis.com/maps/api/js?key=AIzaSyA7ekvGGHxVTwTVcpi073GOERnktqvmYz8&libraries=geometry,visualization"}
+              {:src "/js/styledMarkers.js"}
+              {:src "/js/oms.js"}])
 
 (defn geo-page []
-  (let [show-table? (subscribe [:get-db :show-table?])]
+  (let [show-table? (subscribe [:show-table?])
+        scripts-loaded? (subscribe [:geo/scripts-loaded?])]
     (dispatch-sync [:query-cities])
     (dispatch-sync [:query-naturezas])
+    (when-not @scripts-loaded?
+      (cdr/add-scripts! scripts #(dispatch [:geo/scripts-loaded])))
     (fn []
       [:div.container
        [:div.page-header
         [:h1 "Georreferenciamento "
          [:small "de registros criminais"]]]
        ;; gmap
-       [m/map-outer]
+       (when @scripts-loaded?
+        [m/map-outer])
        [:br]
        [howto-panel]
        [:br]

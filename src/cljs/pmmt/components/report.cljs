@@ -6,6 +6,7 @@
             [re-frame.core :as re-frame :refer
              [reg-event-fx reg-event-db reg-sub subscribe dispatch dispatch-sync]]
             [ajax.core :as ajax]
+            [cljs-dynamic-resources.core :as cdr]
             [pmmt.components.common :as c]
             [pmmt.validation :as v]))
 
@@ -315,14 +316,19 @@
       {:on-click #(dispatch [:modal report-form])}
       "Gerar novo relatório"] " "])
 
+(def scripts [{:src "https://cdn.plot.ly/plotly-latest.min.js"}])
+
 (defn report-page []
-  (dispatch-sync [:query-cities])
-  (dispatch-sync [:query-naturezas])
-  (fn []
-    [:div.container
-     [:div.page-header
-      [:h1 "Relatório "
-       [:small "de registros criminais"]]]
-     [:div
-      [report-button] [:hr]]
-     [result-panel]]))
+  (let [scripts-loaded? (atom false)]
+    (dispatch-sync [:query-cities])
+    (dispatch-sync [:query-naturezas])
+    (when-not @scripts-loaded?
+      (cdr/add-scripts! scripts #(reset! scripts-loaded? true)))
+    (fn []
+      [:div.container
+       [:div.page-header
+        [:h1 "Relatório "
+         [:small "de registros criminais"]]]
+       [:div
+        [report-button] [:hr]]
+       [result-panel]])))
