@@ -10,7 +10,7 @@
 (def tables
   ["cidade" "natureza" "ocorrencia" "tag" "document"])
 
-; Components ------------------------------------------------------------
+; Aux. Components ----------------------------------------------------------
 
 ; search
 
@@ -40,6 +40,12 @@
     {:on-click handler}
     title]
    " "])
+
+(defn nav-pill [title panel active-panel]
+  [:li
+   {:class (when (= panel @active-panel) "active")
+    :on-click #(reset! active-panel panel)}
+   [:a.btn title]])
 
 ; panel
 
@@ -100,11 +106,7 @@
              [nav-button #(dispatch [:modal (partial search-modal t)]) "Buscar"]]
             [display-rows t visible?]]))))
 
-(defn nav-pill [title panel active-panel]
-  [:li
-   {:class (when (= panel @active-panel) "active")
-    :on-click #(reset! active-panel panel)}
-   [:a.btn title]])
+; Misc
 
 (defn update-db-info-text []
   (let [naturezas (subscribe [:naturezas])]
@@ -135,7 +137,14 @@
              ^{:key (:id n)}
              [:li (:nome n)])]]]])))
 
-; Main page
+; Panels ----------------------------------------------------------
+
+(defn sync-lat-lng-panel []
+  [:div.panel.panel-primary
+   [:div.panel-heading
+    [:h3 "Sincronizar endereços com pontos geográficos"]]
+   [:div.panel-body
+    "todo"]])
 
 (defn database-panel []
   [:div.panel.panel-primary
@@ -152,14 +161,20 @@
         [update-db-info-text]
         [u/update-db-button]]])
 
+; Navigation ----------------------------------------------------------
+
 (defn inner-navigation [active-panel]
   [:ul.nav.nav-tabs
    [nav-pill "Base de Dados" :database active-panel]
-   [nav-pill "Inserir dados" :update-db active-panel]])
+   [nav-pill "Inserir dados" :update-db active-panel]
+   [nav-pill "Sincronizar Banco de Dados" :synchronize active-panel]])
 
 (def panels
   {:database database-panel
-   :update-db update-db-panel})
+   :update-db update-db-panel
+   :synchronize sync-lat-lng-panel})
+
+; main interface --------------------------------------------------------
 
 (defn database-panel-interface []
   (dispatch-sync [:query-naturezas]) ; for update-db-panel

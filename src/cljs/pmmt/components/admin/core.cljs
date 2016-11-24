@@ -41,8 +41,8 @@
 
 (defn admin-page []
   (cdr/add-scripts! [{:src "/js/plugins/morris/raphael.min.js" :opts {:id "raphael-js"}}
-                     {:src "/js/plugins/morris/morris.min.js" :opts {:id "morris-js"}}
-                     {:src "/js/plugins/morris/morris-data.js" :opts {:id "morris-data-js"}}])
+                     {:src "/js/plugins/morris/morris.min.js" :opts {:id "morris-js"}}])
+                     ;{:src "/js/plugins/morris/morris-data.js" :opts {:id "morris-data-js"}}])
   (cdr/add-style! "/css/sb-admin.css" nil {:id "sb_admin"})
   (cdr/add-style! "/css/plugins/morris.css" nil {:id "morris_css"})
   (fn []
