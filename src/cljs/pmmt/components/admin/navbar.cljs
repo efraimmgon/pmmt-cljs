@@ -113,9 +113,10 @@
   []
   [:div.collapse.navbar-collapse.navbar-ex1-collapse
    [:ul.nav.navbar-nav.side-nav
-    [sidebar-item {:fav-icon [:i.fa.fa-fw.fa-dashboard]
-                   :title "Dashboard"
-                   :panel :dashboard}]
+    [sidebar-item
+     {:fav-icon [:i.fa.fa-fw.fa-dashboard]
+      :title "Dashboard"
+      :panel :dashboard}]
     [sidebar-item
      {:fav-icon [:i.fa.fa-fw.fa-table]
       :title "Base de dados"

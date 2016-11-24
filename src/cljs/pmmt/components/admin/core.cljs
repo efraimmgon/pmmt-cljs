@@ -7,6 +7,7 @@
             [ajax.core :as ajax]
             [cljs-dynamic-resources.core :as cdr]
             [pmmt.components.common :as c]
+            [pmmt.components.admin.handlers]
             [pmmt.components.admin.dashboard :refer [dashboard]]
             [pmmt.components.admin.database :refer
              [database-panel-interface]]

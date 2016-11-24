@@ -2,7 +2,8 @@
   (:require [ajax.core :as ajax]
             [re-frame.core :refer
              [reg-event-db reg-event-fx reg-sub]]
-            [day8.re-frame.http-fx]))
+            [day8.re-frame.http-fx]
+            [pmmt.subs :refer [query]]))
 
 ; Subscriptions -----------------------------------------------------------
 

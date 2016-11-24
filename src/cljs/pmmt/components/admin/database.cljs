@@ -7,7 +7,7 @@
             [pmmt.components.common :as c]
             [pmmt.components.admin.upload :as u]))
 
-(def *tables*
+(def tables
   ["cidade" "natureza" "ocorrencia" "tag" "document"])
 
 ; Components ------------------------------------------------------------
@@ -85,7 +85,7 @@
 
 (defn display-tables []
       (into [:div]
-       (for [t *tables*]
+       (for [t tables]
          ^{:key t}
          (let [visible? (atom false)]
            [:div.panel.panel-default
@@ -100,6 +100,41 @@
              [nav-button #(dispatch [:modal (partial search-modal t)]) "Buscar"]]
             [display-rows t visible?]]))))
 
+(defn nav-pill [title panel active-panel]
+  [:li
+   {:class (when (= panel @active-panel) "active")
+    :on-click #(reset! active-panel panel)}
+   [:a.btn title]])
+
+(defn update-db-info-text []
+  (let [naturezas (subscribe [:naturezas])]
+    (fn []
+      [:div
+       [:p.info
+         "Selecione um arquivo em format csv com os dados das
+          ocorrências para inseri-los no Banco de Dados."]
+       [:p.info
+        "Selecione também a cidade de referência das ocorrências a serem inseridas."]
+       [:p "Observações:"]
+       [:ul
+        [:li "Os campos devem estar organizados na seguinte ordem:"
+         [:ol
+          [:li "Naturezas"]
+          [:li "Bairro"]
+          [:li "Via (rua, avenida, etc)"]
+          [:li "Número"]
+          [:li "Hora"]
+          [:li "Data"]]]
+        [:li "Se a ocorrência não possuir data ou hora, os respectivos campos devem
+             estar em branco."]
+        [:li "A hora deve estar no formato hh:mm."]
+        [:li "A data deve estar no formato dd/mm/aaaa."]
+        [:li "As seguintes naturezas estão disponíveis para inserção:"
+          [:ul
+           (for [n @naturezas]
+             ^{:key (:id n)}
+             [:li (:nome n)])]]]])))
+
 ; Main page
 
 (defn database-panel []
@@ -110,43 +145,12 @@
     [display-tables]]])
 
 (defn update-db-panel []
-  (r/with-let [naturezas (subscribe [:naturezas])]
-    [:div.panel.panel-primary
-     [:div.panel-heading
-      [:h3 "Inserir ocorrências no BD"]]
-     [:div.panel-body
-      [:p.info
-        "Selecione um arquivo em format csv com os dados das
-         ocorrências para inseri-los no Banco de Dados."]
-      [:p.info
-       "Selecione também a cidade de referência das ocorrências a serem inseridas."]
-      [:p "Observações:"]
-      [:ul
-       [:li "Os campos devem estar organizados na seguinte ordem:"
-        [:ol
-         [:li "Naturezas"]
-         [:li "Bairro"]
-         [:li "Via (rua, avenida, etc)"]
-         [:li "Número"]
-         [:li "Hora"]
-         [:li "Data"]]]
-       [:li "Se a ocorrência não possuir data ou hora, os respectivos campos devem
-            estar em branco."]
-       [:li "A hora deve estar no formato hh:mm."]
-       [:li "A data deve estar no formato dd/mm/aaaa."]
-       [:li "As seguintes naturezas estão disponíveis para inserção:"
-        (into
-          [:ul]
-          (for [n @naturezas]
-            ^{:key (:id n)}
-            [:li (:nome n)]))]]
-      [u/update-db-button]]]))
-
-(defn nav-pill [title panel active-panel]
-  [:li
-   {:class (when (= panel @active-panel) "active")
-    :on-click #(reset! active-panel panel)}
-   [:a.btn title]])
+      [:div.panel.panel-primary
+       [:div.panel-heading
+        [:h3 "Inserir ocorrências no BD"]]
+       [:div.panel-body
+        [update-db-info-text]
+        [u/update-db-button]]])
 
 (defn inner-navigation [active-panel]
   [:ul.nav.nav-tabs
