@@ -17,3 +17,11 @@
   (let [query-params {:table table :field field :value (str->int value)}]
     (response/ok
      (db/select-by-field query-params))))
+
+(defn get-ungeocoded-reports []
+  (response/ok
+   (db/reports-with-null-coordinates)))
+
+(defn get-users []
+  (response/ok
+   (db/get-users)))

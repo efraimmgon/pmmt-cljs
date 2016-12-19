@@ -6,17 +6,17 @@
   (not (re-find #"^\w+?://" uri)))
 
 (defn default-headers [request]
-  (if (local-uri? request)
-    (-> request
+  (-> request
+      (-> request
         (update :uri #(str js/context %))
-        (update :headers #(merge {"x-csrf-token" js/csrfToken} %)))
-    request))
+        (update
+          :headers
+          #(merge
+            %
+            {"Accept" "application/transit+json"
+             "x-csrf-token" js/csrfToken})))
+      (update :uri #(str js/context %))))
 
-; (defn load-interceptors! []
-;   (swap! ajax/default-interceptors
-;          conj
-;          (ajax/to-interceptor {:name "default headers"
-;                                :request default-headers})))
 
 (defn user-action [request]
   (dispatch [:assoc-db :user-event true])
@@ -24,8 +24,6 @@
 
 (defn load-interceptors! []
   (swap! ajax/default-interceptors
-         into
-         [(ajax/to-interceptor {:name "default headers"
-                                :request default-headers})
-          (ajax/to-interceptor {:name "user action"
-                                :request user-action})]))
+         conj
+         (ajax/to-interceptor {:name "default headers"
+                               :request default-headers})))

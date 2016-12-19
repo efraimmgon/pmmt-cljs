@@ -15,11 +15,6 @@
 
 ; Misc -----------------------------------------------------------
 
-(s/defschema UserRegistration
-             {:id String
-              :pass String
-              :pass-confirm String})
-
 (s/defschema Result
              {:result s/Keyword
               (s/optional-key :message) String})
@@ -86,11 +81,12 @@
                            :title "PMMT Public API"
                            :description "Public Services"}}}}
   ; auth
-  (POST "/register" req
+  ; TODO: change to POST
+  (GET "/register" req
         :return Result
-        :body [user UserRegistration]
+        :query-params [id :- String, pass :- String, pass-confirm :- String]
         :summary "register a new user"
-        (auth/register! req user))
+        (auth/register! req {:id id, :pass pass, :pass-confirm pass-confirm}))
   (POST "/login" req
         :header-params [authorization :- String]
         :summary "log in the user and create a session"
@@ -100,6 +96,9 @@
         :summary "remove user session"
         :return Result
         (auth/logout!))
+  (GET "/send-message" req
+        :query-params [a :- String]
+        (ok (str "param: " a " // params: " (:params req))))
 
   ; biblioteca
   (GET "/tags-and-documents" req
@@ -131,6 +130,9 @@
              :data {:info {:version "1.0.0"
                            :title "PMMT API"
                            :description "Private Services"}}}}
+  (GET "/db/users" []
+       :summary "Retrieves all users"
+       (admin/get-users))
   (GET "/db/:table" []
        :summary "Retrieves all rows in the given table"
        :path-params [table :- String]
@@ -141,6 +143,9 @@
                      field :- String
                      value :- String]
        (admin/fetch-rows-by-value table field value))
+  (GET "/db/ocorrencia/geocode" []
+       :summary "Retrive `ocorrencia` rows with `latitude` = null"
+       (admin/get-ungeocoded-reports))
   (POST "/upload" req
         :multipart-params [file :- TempFileUpload]
         :middleware [wrap-multipart-params]

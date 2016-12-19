@@ -21,6 +21,15 @@ VALUES (:id, :pass)
 SELECT * FROM users
 WHERE id = :id
 
+-- :name get-users :? :*
+-- :doc retrieve a user given the id.
+SELECT * FROM users
+
+-- :name update-last-login :! :n
+UPDATE users
+ SET last_login = current_timestamp
+ WHERE id = :id
+
 -- :name delete-user! :! :n
 -- :doc delete a user given the id
 DELETE FROM users
@@ -66,6 +75,9 @@ INSERT INTO cidade (nome) VALUES (:nome)
 -- create a `natureza` record
 INSERT INTO natureza (nome) VALUES (:nome)
 
+
+-- OCORRENCIA
+
 -- :name create-ocorrencia! :! :n
 -- create a `ocorrencia` record
 INSERT INTO ocorrencia
@@ -73,6 +85,13 @@ INSERT INTO ocorrencia
  latitude, longitude, natureza_id, hora, periodo)
 VALUES (:data, :cidade_id, :local, :bairro, :via, :numero,
  :latitude, :longitude, :natureza_id, :hora, :periodo)
+
+-- :name reports-with-null-coordinates :? :*
+-- fetch `ocorrencia` records with `latitude` and `longitude` = null
+SELECT * FROM ocorrencia
+ WHERE latitude = NULL AND longitude = NULL
+
+ -- TAG
 
 -- :name create-tag! :! :n
 -- create a `tag` record

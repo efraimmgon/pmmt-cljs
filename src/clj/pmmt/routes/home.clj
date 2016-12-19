@@ -1,7 +1,7 @@
 (ns pmmt.routes.home
   (:require [pmmt.layout :as layout]
             [pmmt.db.core :as db]
-            [compojure.core :refer [defroutes GET]]
+            [compojure.core :refer [defroutes GET POST]]
             [ring.util.http-response :as response]
             [clj-time.core :as t]
             [clj-time.format :as tf]

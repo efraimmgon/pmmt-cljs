@@ -16,6 +16,8 @@
  (fn [db [_ table]]
    (get-in db [table :rows])))
 
+(reg-sub :users query)
+
 ; Events ------------------------------------------------------------------
 
 (reg-event-db
@@ -32,6 +34,19 @@
                  :on-success [:admin/create-rows table]
                  :response-format (ajax/json-response-format {:keywords? true})}
     :db db}))
+
+(reg-event-fx
+ :get-users
+ (fn [cofx _]
+   {:http-xhrio {:method :get
+                 :uri "/db/users"
+                 :on-success [:get-users-success]
+                 :response-format (ajax/json-response-format {:keywords? true})}}))
+
+(reg-event-db
+ :get-users-success
+ (fn [db [_ response]]
+   (assoc db :users response)))
 
 (reg-event-fx
  :admin/search-fail

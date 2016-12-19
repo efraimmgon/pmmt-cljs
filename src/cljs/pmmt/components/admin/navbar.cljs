@@ -4,6 +4,10 @@
             [re-frame.core :as re-frame :refer
              [subscribe dispatch]]))
 
+; local state ------------------------------------------------------------
+
+(defonce local-state
+  (atom {:active-menu nil}))
 
 ; navbar aux. components ------------------------------------------------
 
@@ -21,13 +25,21 @@
    [:a.navbar-brand {:href "#/"} "Home"]])
 
 ; top-menu-items ---------------------------------------------------------
+(defn toggle-menu [id]
+  (let [active-menu (r/cursor local-state [:active-menu])]
+    (if (= @active-menu id)
+      ; if the user clicks on the same menu again, we close it
+      (reset! active-menu nil)
+      ; else, we toggle the active menu
+      (reset! active-menu id))))
 
 (defn user-messages []
-  (let [expanded? (atom false)]
+  (let [active-menu (r/cursor local-state [:active-menu])
+        id :user-messages]
     (fn []
       [:li.dropdown
-       {:class (when @expanded? "open")
-        :on-click #(swap! expanded? not)}
+       {:class (when (= @active-menu id) "open")
+        :on-click #(toggle-menu id)}
        [:a.dropdown-toggle {:href "javascript:;"}
         [:i.fa.fa-envelope]]
        [:ul.dropdown-menu.message-dropdown
@@ -47,11 +59,12 @@
 
 ; TODO: notifications
 (defn user-notifications []
-  (let [expanded? (atom false)]
+  (let [active-menu (r/cursor local-state [:active-menu])
+        id :user-notifications]
     (fn []
       [:li.dropdown
-       {:class (when @expanded? "open")
-        :on-click #(swap! expanded? not)}
+       {:class (when (= @active-menu id) "open")
+        :on-click #(toggle-menu id)}
        [:a.dropdown-toggle
         {:data-toggle "dropdown"
          :href "javascript:;"}
@@ -65,11 +78,12 @@
         [:li [:a {:href "javascript:;"} "Ver todas"]]]])))
 
 (defn user-actions [user-id]
-  (let [expanded? (atom false)]
+  (let [active-menu (r/cursor local-state [:active-menu])
+        id :user-actions]
     (fn []
       [:li.dropdown
-       {:class (when @expanded? "open")
-        :on-click #(swap! expanded? not)}
+       {:class (when (= @active-menu id) "open")
+        :on-click #(toggle-menu id)}
        [:a.dropdown-toggle
         {:data-toggle "dropdown"
          :href "javascript:;"}
@@ -120,7 +134,11 @@
     [sidebar-item
      {:fav-icon [:i.fa.fa-fw.fa-table]
       :title "Base de dados"
-      :panel :database}]]])
+      :panel :database}]
+    [sidebar-item
+     {:fav-icon [:i.fa.fa-fw.fa-table]
+      :title "Usuários"
+      :panel :users}]]])
 
 ; main ----------------------------------------------------------------
 

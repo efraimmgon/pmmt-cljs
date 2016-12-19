@@ -11,6 +11,17 @@
        footer]]]]
    [:div.modal-backdrop.fade.in]])
 
+; button ------------------------------------------------------------
+
+(defn nav-button [{:keys [handler title]}]
+  [:span
+   [:button.btn.btn-default
+    {:on-click handler}
+    title]
+   " "])
+
+; forms ------------------------------------------------------------
+
 (defn select-input [id options fields]
   ;; set default value
   (swap! fields assoc id (-> options first :value))
@@ -86,6 +97,8 @@
   (when-let [error (id @errors)]
     [:div.alert.alert-danger (clojure.string/join error)]))
 
+; pager ------------------------------------------------------------
+
 (defn forward [i pages]
   (if (< i (dec pages)) (inc i) i))
 
@@ -112,3 +125,21 @@
         {:on-click #(swap! page forward pages)
          :class (when (= @page (dec pages)) "disabled")}
         [:span ">>"]]]))))
+
+; table ------------------------------------------------------------
+
+(defn thead [headers]
+  [:thead
+   [:tr
+    (for [h headers]
+      ^{:key h}
+      [:th h])]])
+
+(defn tbody [rows]
+  [:tbody
+   (for [row rows]
+     ^{:key row}
+     [:tr
+      (for [k (keys row)]
+        ^{:key k}
+        [:td (k row)])])])

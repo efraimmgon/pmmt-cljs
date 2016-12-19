@@ -70,7 +70,6 @@
                               :message "nome de usuário e/ou senha incorretos"}))))
 
 (defn logout! []
-  (print "Got logout!")
   (-> {:result :ok}
       (response/ok)
       (assoc :session nil)))

@@ -1,44 +1,46 @@
 (ns pmmt.components.registration
-  (:require [reagent.core :refer [atom]]
+  (:require [reagent.core :as r :refer [atom]]
             [re-frame.core :refer
              [reg-event-fx reg-event-db subscribe reg-sub dispatch dispatch-sync]]
             [ajax.core :as ajax]
             [pmmt.components.common :as c]
             [pmmt.validation :refer [registration-errors]]))
 
+; local state ----------------------------------------------------------------
+
+(defonce local-state
+  (atom {:registration-form {:fields {}
+                             :error nil}}))
+
 ; Events ----------------------------------------------------------------
 
-(defn register-failure [{:keys [db]} [_ error response]]
-  {:reset [error (get-in response [:response :message])]
+(defn register-failure
+  [{:keys [db]} [_ error response]]
+  {:reset [error {:server-error (get-in response [:response :message])}]
    :db db})
+
 (reg-event-fx
  :register-failure
  register-failure)
 
-(defn register-success [{:keys [db]} [_ fields response]]
-  {:reset [fields {}]
-   :dispatch [:remove-modal]
-   :db (assoc db :identity (:id @fields))})
 (reg-event-fx
  :register-success
- register-success)
+ (fn register-success [{:keys [db]} [_ fields response]]
+   {:reset [fields {}]
+    :dispatch [:remove-modal]
+    :db (assoc db :identity (:id @fields))}))
 
-(defn register [{:keys [db]} [_ fields error]]
-  (if-let [err (registration-errors @fields)]
-    {:reset [error err]
-     :db db}
-    {:http-xhrio {:method :post
-                  :uri "/register"
-                  :params @fields
-                  :on-success [:register-success fields]
-                  :on-failure [:register-failure error]
-                  :format (ajax/json-request-format)
-                  :response-format (ajax/json-response-format {:keywords? true})}
-
-     :db db}))
 (reg-event-fx
  :register
- register)
+ (fn register [cofx [_ fields error]]
+   (if-let [err (registration-errors @fields)]
+     {:reset [error err]}
+     {:http-xhrio {:method :get
+                   :uri "/register"
+                   :params @fields
+                   :response-format (ajax/json-response-format {:keywords? true})
+                   :on-success [:register-success fields]
+                   :on-failure [:register-failure error]}})))
 
 (reg-event-fx
  :delete-account-success
@@ -53,8 +55,7 @@
                  :uri "/account"
                  :on-success [:delete-account-success]
                  :format (ajax/json-request-format)
-                 :response-format (ajax/json-response-format {:keywords? true})}
-    :db db}))
+                 :response-format (ajax/json-response-format {:keywords? true})}}))
 
 ; Subscriptions ---------------------------------------------------------
 
@@ -66,8 +67,8 @@
 ; Core -------------------------------------------------------------------
 
 (defn registration-form []
-  (let [fields (atom {})
-        error (atom nil)]
+  (let [fields (r/cursor local-state [:registration-form :fields])
+        error (r/cursor local-state [:registration-form :error])]
     (fn []
       [c/modal
        [:div "Registro de novo usuário"]

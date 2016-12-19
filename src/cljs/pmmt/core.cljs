@@ -1,12 +1,11 @@
 (ns pmmt.core
   (:require [reagent.core :as r :refer [atom]]
-            [reagent.session :as session]
-            [ajax.core :as ajax :refer [GET POST]]
             [re-frame.core :as re-frame :refer
              [subscribe dispatch dispatch-sync]]
             [secretary.core :as secretary :include-macros true]
             [goog.events :as events]
             [goog.history.EventType :as HistoryEventType]
+            [cljs.core :as core]
             [pmmt.handlers]
             [pmmt.subs]
             [pmmt.components.registration :as reg]
@@ -18,6 +17,8 @@
             [pmmt.components.admin :as admin]
             [pmmt.components.admin.core :as adm])
   (:import goog.History))
+
+;(require '[pmmt.components.registration :as reg])
 
 (enable-console-print!)
 
@@ -86,8 +87,7 @@
        [nav-link "#/analise-criminal/geo/" "Georreferenciamento" :geo]
        [nav-link "#/analise-criminal/relatorio/" "Relatório" :relatorio]
        [nav-link "#/biblioteca/" "Biblioteca" :biblioteca]
-       [nav-link "#/utilitarios/" "Utilitários" :utilitarios]
-       [nav-link "#/admin-old/" "Admin-old" :admin-old]]
+       [nav-link "#/utilitarios/" "Utilitários" :utilitarios]]
       [user-menu]]]))
 
 (defn home-page []
@@ -110,7 +110,6 @@
 (def pages
   {:home #'home-page
    :admin #'adm/admin-page
-   :admin-old #'admin/admin-page
    :utilitarios #'u/utilitarios-page
    :biblioteca #'b/biblioteca-page
    :relatorio #'report/report-page
@@ -138,9 +137,6 @@
 
 (secretary/defroute "/admin" []
   (dispatch [:page :admin]))
-
-(secretary/defroute "/admin-old/" []
-  (dispatch [:page :admin-old]))
 
 (secretary/defroute "/utilitarios/" []
   (dispatch [:page :utilitarios]))

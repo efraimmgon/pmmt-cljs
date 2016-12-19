@@ -5,10 +5,25 @@
             [day8.re-frame.http-fx]
             [ajax.core :as ajax]
             [pmmt.components.common :as c]
-            [pmmt.components.admin.upload :as u]))
+            [pmmt.components.admin.upload :as u]
+            [pmmt.components.admin.geocode :refer [sync-lat-lng-panel]]))
+
+; local state ------------------------------------------------------------
+
+(defonce local-state
+  (atom {:setup-ready? false
+         :active-panel :database}))
 
 (def tables
   ["cidade" "natureza" "ocorrencia" "tag" "document"])
+
+; misc ------------------------------------------------------------
+
+(defn setup! []
+  (let [setup-ready? (r/cursor local-state [:setup-ready?])]
+    (when-not @setup-ready?
+      (dispatch-sync [:query-naturezas])
+      (reset! setup-ready? true)))) ; for update-db-panel
 
 ; Aux. Components ----------------------------------------------------------
 
@@ -34,18 +49,13 @@
 
 ; nav
 
-(defn nav-button [handler title]
-  [:span
-   [:button.btn.btn-default
-    {:on-click handler}
-    title]
-   " "])
-
-(defn nav-pill [title panel active-panel]
-  [:li
-   {:class (when (= panel @active-panel) "active")
-    :on-click #(reset! active-panel panel)}
-   [:a.btn title]])
+(defn nav-pill [title panel]
+  (let [active-panel (r/cursor local-state [:active-panel])]
+    (fn []
+      [:li
+       {:class (when (= panel @active-panel) "active")
+        :on-click #(reset! active-panel panel)}
+       [:a.btn title]])))
 
 ; panel
 
@@ -102,8 +112,12 @@
              (clojure.string/capitalize t) " "
              [:span.caret]]
             [panel-body visible?
-             [nav-button #(dispatch [:admin/fetch-table-rows t]) "Todos os registros"]
-             [nav-button #(dispatch [:modal (partial search-modal t)]) "Buscar"]]
+             [c/nav-button
+              {:title "Todos os registros"
+               :handler #(dispatch [:admin/fetch-table-rows t])}]
+             [c/nav-button
+              {:title "Buscar"
+               :handler #(dispatch [:modal (partial search-modal t)])}]]
             [display-rows t visible?]]))))
 
 ; Misc
@@ -113,7 +127,7 @@
     (fn []
       [:div
        [:p.info
-         "Selecione um arquivo em format csv com os dados das
+         "Selecione um arquivo em formato `csv` com os dados das
           ocorrências para inseri-los no Banco de Dados."]
        [:p.info
         "Selecione também a cidade de referência das ocorrências a serem inseridas."]
@@ -139,17 +153,10 @@
 
 ; Panels ----------------------------------------------------------
 
-(defn sync-lat-lng-panel []
-  [:div.panel.panel-primary
-   [:div.panel-heading
-    [:h3 "Sincronizar endereços com pontos geográficos"]]
-   [:div.panel-body
-    "todo"]])
-
 (defn database-panel []
   [:div.panel.panel-primary
    [:div.panel-heading
-    [:h3 "Base de Dados"]]
+    [:h3 "Tabelas"]]
    [:div.panel-body
     [display-tables]]])
 
@@ -163,11 +170,11 @@
 
 ; Navigation ----------------------------------------------------------
 
-(defn inner-navigation [active-panel]
+(defn inner-navigation []
   [:ul.nav.nav-tabs
-   [nav-pill "Base de Dados" :database active-panel]
-   [nav-pill "Inserir dados" :update-db active-panel]
-   [nav-pill "Sincronizar Banco de Dados" :synchronize active-panel]])
+   [nav-pill "Tabelas" :database]
+   [nav-pill "Inserir dados" :update-db]
+   [nav-pill "Sincronizar Banco de Dados" :synchronize]])
 
 (def panels
   {:database database-panel
@@ -177,12 +184,9 @@
 ; main interface --------------------------------------------------------
 
 (defn database-panel-interface []
-  (dispatch-sync [:query-naturezas]) ; for update-db-panel
-  (let [active-panel (atom :database)]
+  (setup!)
+  (let [active-panel (r/cursor local-state [:active-panel])]
     (fn []
-      [:div.container
-       [:div.page-header
-        [:h1
-         "Administração"]]
-       [inner-navigation active-panel]
+      [:div
+       [inner-navigation]
        [(panels @active-panel)]])))

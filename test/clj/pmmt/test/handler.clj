@@ -11,3 +11,11 @@
   (testing "not-found route"
     (let [response ((app) (request :get "/invalid"))]
       (is (= 404 (:status response))))))
+
+(deftest service-routes
+  (testing "/register"
+    (let [user-registration {:id "efraim"
+                             :pass "123456789"
+                             :pass-confirm "123456789"}
+          response ((app) (request :post "/register" user-registration))]
+      (is (= 200 response)))))
