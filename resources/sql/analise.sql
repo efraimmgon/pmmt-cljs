@@ -6,7 +6,6 @@ SELECT id, nome FROM natureza
 -- :doc retrieves ocorrencias for geolocalization (lat and lng not null)
 SELECT * FROM ocorrencia
   WHERE data BETWEEN :data_inicial AND :data_final
-  AND cidade_id = :cidade_id
   AND latitude is NOT NULL
 /*~ ; :natureza_id
 (cond
@@ -30,7 +29,6 @@ SELECT * FROM ocorrencia AS o
   INNER JOIN natureza AS n
   ON o.natureza_id = n.id
   WHERE o.data BETWEEN :data-inicial AND :data-final
-  AND o.cidade_id = :cidade-id
 --~ (when (:bairro params) "AND o.bairro LIKE :bairro")
 
 -- :name get-reports-raw :? :*
@@ -53,7 +51,6 @@ SELECT n.nome, COUNT(*) FROM ocorrencia AS o
 --:doc fetch reports count with usual filtering
 SELECT COUNT(*) FROM ocorrencia AS o
   WHERE o.data BETWEEN :data-inicial AND :data-final
-  AND o.cidade_id = :cidade-id
 --~ (when (:bairro params) "AND o.bairro LIKE :bairro")
 
 -- :name get-reports-count-by-offense :? :*
@@ -61,7 +58,6 @@ SELECT n.nome, COUNT(*) FROM ocorrencia AS o
   INNER JOIN natureza AS n
   ON o.natureza_id = n.id
   WHERE o.data BETWEEN :data-inicial AND :data-final
-  AND o.cidade_id = :cidade-id
   AND o.natureza_id IN :tuple:natureza-id
 --~ (when (:bairro params) "AND o.bairro LIKE :bairro")
   GROUP BY n.nome ORDER BY n.nome DESC

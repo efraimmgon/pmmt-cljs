@@ -102,7 +102,6 @@
         errors (atom {})
         cities (subscribe [:cities])
         naturezas (subscribe [:naturezas])
-        city-form-opts (format-opts @cities :id :nome)
         ; group related incidents in `extra-opts`, so all their ids can be
         ; selected at once
         natureza-form-opts (concat (extra-opts) (format-opts @naturezas :id :nome))]
@@ -114,7 +113,6 @@
          [:strong "* campo obrigatório"]]
         [:fieldset
          [:legend "Básicas"]
-         [c/select-form "Cidade" :cidade_id city-form-opts fields]
          [c/select-form "Natureza" :natureza_id natureza-form-opts fields]
          [c/display-error errors :data_inicial]
          [c/text-input "Data inicial" :data_inicial "dd/mm/aaaa" fields]
@@ -159,7 +157,6 @@
 (defn geo-page []
   (let [show-table? (subscribe [:show-table?])
         scripts-loaded? (subscribe [:geo/scripts-loaded?])]
-    (dispatch-sync [:query-cities])
     (dispatch-sync [:query-naturezas])
     (when-not @scripts-loaded?
       (cdr/add-scripts! scripts #(dispatch [:geo/scripts-loaded])))

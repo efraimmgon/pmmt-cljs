@@ -45,8 +45,7 @@
 
 ; Geo ----------------------------------------------------------
 (s/defschema GeoRequest
-             {:cidade_id s/Int
-              ; don't know how to coerce this here
+             {; don't know how to coerce this here
               ; should be three options: number, coll, and string
               :natureza_id s/Str
               :data_inicial s/Str
@@ -59,8 +58,7 @@
 ; Relatório -----------------------------------------------------
 
 (s/defschema ReportRequest
-             {:cidade-id s/Int
-              :data-inicial-a s/Str
+             {:data-inicial-a s/Str
               :data-final-a s/Str
               :data-inicial-b s/Str
               :data-final-b s/Str

@@ -10,23 +10,19 @@
 (defn geo-db-coercer
   [params]
   (let [like-fn (fn [s] (and s (str "%" (c/NFKD s) "%")))
-        str->long-date (fn [s] (and s (c/str->long-date s)))
-        str->long-time (fn [s] (and s (c/str->long-time s)))
+        str-to-date (fn [s] (and s (c/str->java-date s)))
+        str-to-time (fn [s] (and s (c/str->java-time s)))
         db-params (-> params
                       (update :natureza_id clojure.edn/read-string)
-                      (update :data_inicial str->long-date)
-                      (update :data_final str->long-date)
+                      (update :data_inicial str-to-date)
+                      (update :data_final str-to-date)
                       (update :bairro like-fn)
                       (update :via like-fn)
-                      (update :hora_inicial str->long-time)
-                      (update :hora_final str->long-time))]
+                      (update :hora_inicial str-to-time)
+                      (update :hora_final str-to-time))]
     db-params))
 
 ;;; core
-
-(defn get-cities []
-  (response/ok
-   (db/get-cities)))
 
 (defn get-naturezas []
   (response/ok

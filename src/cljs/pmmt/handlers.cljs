@@ -26,15 +26,6 @@
           db)))
 
 (reg-event-fx
- :query-cities
- (fn [{:keys [db]} _]
-   {:http-xhrio {:method :get
-                 :uri "/db/cidade"
-                 :on-success [:assoc-db :cities]
-                 :response-format (ajax/json-response-format {:keywords? true})}
-    :db db}))
-
-(reg-event-fx
  :query-naturezas
  (fn [{:keys [db]} _]
    {:http-xhrio {:method :get

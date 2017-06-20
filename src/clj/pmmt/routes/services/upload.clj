@@ -5,7 +5,10 @@
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [clojure.walk :as walk]
-            [clj-time.coerce :as tc])
+            [clj-time.coerce :as tc]
+            [clj-time.core :as t]
+            [clj-time.format :as tf]
+            [pmmt.routes.common :as c])
   (:import [java.io ByteArrayOutputStream FileInputStream]))
 
 ; utility -----------------------------------------------------------
@@ -33,19 +36,33 @@
      (Double. s)))
 
 (defn str-to-long [s]
-  ; tc/to-long returns 0 if it's param is nil
+  ; tc/to-long returns 0 if its param is nil
   (if-not (clojure.string/blank? s)
     (tc/to-long s)))
 
+(defn str-to-date [s]
+  (if-not (clojure.string/blank? s)
+    (let [date-format (tf/formatters :date)]
+      (-> (tf/parse date-format s)
+          (c/joda->java-date)))))
+
+(defn str-to-time [s]
+  (when-not (clojure.string/blank? s)
+    (let [time-format (tf/formatters :hour-minute-second)]
+      (-> (tf/parse time-format s)
+          (c/joda->java-time)))))
+
 (defn reports-coercer [m]
   (-> m
-      (dissoc :id)
-      (update :data str-to-long)
-      (update :cidade_id str-to-int)
+      (update :data str-to-date)
       (update :latitude str-to-double)
       (update :longitude str-to-double)
-      (update :natureza_id #(-> % str-to-int dec))
-      (update :hora str-to-long)))
+      (update :natureza_id str-to-int)
+      (update :hora str-to-time)))
+
+(defn natureza-coercer [m]
+  (-> m
+      (update :id str-to-int)))
 
 ; Core ------------------------------------------------------------
 

@@ -28,11 +28,6 @@
 
 (reg-sub :naturezas query)
 
-(reg-sub
- :city-form-opts
- (fn [db _]
-   (format-opts (:cities db) :id :nome)))
-
 ; Geo --------------------------------------------------------------
 
 (reg-sub :geo/scripts-loaded? query)

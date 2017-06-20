@@ -53,7 +53,8 @@
   :plugins [[lein-cprop "1.0.1"]
             [migratus-lein "0.4.2"]
             [lein-cljsbuild "1.1.4"]
-            [lein-immutant "2.1.0"]]
+            [lein-immutant "2.1.0"]
+            [lein-exec "0.3.6"]]
   :clean-targets ^{:protect false}
   [:target-path [:cljsbuild :builds :app :compiler :output-dir] [:cljsbuild :builds :app :compiler :output-to]]
   :figwheel

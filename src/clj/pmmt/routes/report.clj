@@ -21,10 +21,10 @@
   (let [like-fn (fn [s] (and s (str "%" (c/NFKD s) "%")))
         str->coll (fn [s] (and s (clojure.edn/read-string s)))]
     (-> params
-        (update :data-inicial-a c/str->long-date)
-        (update :data-final-a c/str->long-date)
-        (update :data-inicial-b c/str->long-date)
-        (update :data-final-b c/str->long-date)
+        (update :data-inicial-a c/str->java-date)
+        (update :data-final-a c/str->java-date)
+        (update :data-inicial-b c/str->java-date)
+        (update :data-final-b c/str->java-date)
         (update :roubo #(when % (map :id (c/ROUBO))))
         (update :furto #(when % (map :id (c/FURTO))))
         (update :trafico #(when % (map :id (c/TRAFICO))))
@@ -169,13 +169,10 @@
            (vec weekdays-reports-a) (vec weekdays-reports-b)))))
 
 (defn process-report-data
-  [{:keys [cidade-id data-inicial-a data-final-a data-inicial-b data-final-b] :as params}]
-  (println "params:" params)
-  (let [params-a {:cidade-id cidade-id
-                  :data-inicial data-inicial-a
+  [{:keys [data-inicial-a data-final-a data-inicial-b data-final-b] :as params}]
+  (let [params-a {:data-inicial data-inicial-a
                   :data-final data-final-a}
-        params-b {:cidade-id cidade-id
-                  :data-inicial data-inicial-b
+        params-b {:data-inicial data-inicial-b
                   :data-final data-final-b}
         [count-a count-b] (map #(first (db/get-reports-count %)) [params-a params-b])
         [period-a period-b] (map db/get-reports [params-a params-b])
@@ -193,7 +190,7 @@
                                    (select-keys params
                                                 [:roubo :furto :trafico :homicidio])))
         optionals-neighborhood
-        (process-neighborhood period-a period-b 
+        (process-neighborhood period-a period-b
                               (remove #(nil? (second %))
                                       (select-keys params [:bairro])))
         optionals-weekdays

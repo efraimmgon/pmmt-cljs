@@ -189,8 +189,7 @@
 (defn report-form []
   (let [fields (atom default-values)
         errors (atom {})
-        cities (subscribe [:cities])
-        city-form-opts (format-opts @cities :id :nome)]
+        cities (subscribe [:cities])]
     (fn []
       [c/modal
        [:div {:on-click #(print @fields)}
@@ -198,7 +197,6 @@
        [:div
         [:div.well.well-sm
          [:strong "* campo obrigatório"]]
-        [c/select-form "Cidade" :cidade-id city-form-opts fields true]
         [:fieldset
          [:legend "Período A"]
          [c/text-input "Data inicial" :data-inicial-a "dd/mm/aaaa" fields]
@@ -320,7 +318,6 @@
 
 (defn report-page []
   (let [scripts-loaded? (atom false)]
-    (dispatch-sync [:query-cities])
     (dispatch-sync [:query-naturezas])
     (when-not @scripts-loaded?
       (cdr/add-scripts! scripts #(reset! scripts-loaded? true)))
