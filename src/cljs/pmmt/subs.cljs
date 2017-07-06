@@ -30,6 +30,4 @@
 
 ; Geo --------------------------------------------------------------
 
-(reg-sub :geo/scripts-loaded? query)
-
 (reg-sub :show-table? query)

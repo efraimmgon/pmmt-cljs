@@ -1,4 +1,9 @@
-(ns pmmt.components.common)
+(ns pmmt.components.common
+  (:require [dommy.core :as dommy :refer-macros [sel sel1]]))
+
+; --------------------------------------------------------------------
+; MISC
+; --------------------------------------------------------------------
 
 (defn modal [header body footer]
   [:div
@@ -11,7 +16,13 @@
        footer]]]]
    [:div.modal-backdrop.fade.in]])
 
-; button ------------------------------------------------------------
+(defn display-error [errors id]
+  (when-let [error (id @errors)]
+    [:div.alert.alert-danger (clojure.string/join error)]))
+
+; --------------------------------------------------------------------
+; BUTTON
+; --------------------------------------------------------------------
 
 (defn nav-button [{:keys [handler title]}]
   [:span
@@ -20,7 +31,11 @@
     title]
    " "])
 
-; forms ------------------------------------------------------------
+; --------------------------------------------------------------------
+; FORMS
+; --------------------------------------------------------------------
+
+; Component parts
 
 (defn select-input [id options fields]
   ;; set default value
@@ -35,16 +50,6 @@
      [:option
       {:value (str value)}
       display])])
-
-(defn select-form [label id options fields & [optional?]]
-  [:div.form-group
-   [:label {:for id} label]
-   (if optional?
-     [select-input id options fields]
-     [:div.input-group
-      [select-input id options fields]
-      [:span.input-group-addon
-       "*"]])])
 
 (defn input [type id placeholder fields]
   [:input.form-control
@@ -63,15 +68,6 @@
       [:span.input-group-addon
        "*"]])])
 
-(defn text-input [label id placeholder fields & [optional?]]
-  (form-input :text label id placeholder fields optional?))
-
-(defn number-input [label id placeholder fields & [optional?]]
-  (form-input :number label id placeholder fields optional?))
-
-(defn password-input [label id placeholder fields & [optional?]]
-  (form-input :password label id placeholder fields optional?))
-
 (defn checkbox-input-group [label id value fields]
   (let [checked? (atom false)]
     [:label
@@ -84,6 +80,25 @@
                           (swap! fields dissoc id)))}]
      label]))
 
+; Components
+
+;; Text
+
+(defn text-input [label id placeholder fields & [optional?]]
+  (form-input :text label id placeholder fields optional?))
+
+;; Number
+
+(defn number-input [label id placeholder fields & [optional?]]
+  (form-input :number label id placeholder fields optional?))
+
+;; Password
+
+(defn password-input [label id placeholder fields & [optional?]]
+  (form-input :password label id placeholder fields optional?))
+
+;; Checkbox
+
 (defn checkbox-input [label id value fields & [optional?]]
   [:div.checkbox
    (if optional?
@@ -93,11 +108,21 @@
       [:span.input-group-addon
        "*"]])])
 
-(defn display-error [errors id]
-  (when-let [error (id @errors)]
-    [:div.alert.alert-danger (clojure.string/join error)]))
+;; Select
 
-; pager ------------------------------------------------------------
+(defn select-form [label id options fields & [optional?]]
+  [:div.form-group
+   [:label {:for id} label]
+   (if optional?
+     [select-input id options fields]
+     [:div.input-group
+      [select-input id options fields]
+      [:span.input-group-addon
+       "*"]])])
+
+; --------------------------------------------------------------------
+; PAGER
+; --------------------------------------------------------------------
 
 (defn forward [i pages]
   (if (< i (dec pages)) (inc i) i))
@@ -143,3 +168,29 @@
       (for [k (keys row)]
         ^{:key k}
         [:td (k row)])])])
+
+; --------------------------------------------------------------
+; DOM Manipulation
+; --------------------------------------------------------------
+
+(defn set-attrs! [elt opts]
+  (reduce (fn [elt- [attr val]]
+            (dommy/set-attr! elt- attr val))
+          elt opts))
+
+(defn add-style! [opts]
+  (let [elt (-> (dommy/create-element :link)
+                (dommy/set-attr! :rel "stylesheet")
+                (dommy/set-attr! :type "text/css")
+                (dommy/set-attr! :href (:href opts)))]
+    (dommy/append! (sel1 :body) elt)))
+
+(defn add-script! [opts]
+  (let [elt (-> (dommy/create-element :script)
+                (dommy/set-attr! :type "text/javascript")
+                (dommy/set-attr! :src (:src opts)))]
+    (dommy/append! (sel1 :body) elt)))
+
+; remove a style
+(defn remove-elt! [id]
+  (dommy/remove! (sel1 id)))

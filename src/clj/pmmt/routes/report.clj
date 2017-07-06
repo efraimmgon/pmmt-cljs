@@ -88,8 +88,9 @@
     :vias (select-distinct (remove #(empty? (:via %)) coll) :via)
     :locais (select-distinct (remove #(or (empty? (:via %)) (empty? (:bairro %))) coll)
                              #(str (:bairro %) ", " (:via %)))
-    :dias-da-semana  (select-distinct-weekdays coll)
-    :periodos (select-distinct (remove #(empty? (:periodo %)) coll) :periodo)))
+    :dias-da-semana  (select-distinct-weekdays coll)))
+    ;; TODO: there is no longer a column named `periodo` in `ocorrencia`
+    ;:periodos (select-distinct (remove #(empty? (:periodo %)) coll) :periodo)))
 
 (defn format-plot-bar-data [name title-x coll]
   (let [[labels vals] (labels-and-values coll)]

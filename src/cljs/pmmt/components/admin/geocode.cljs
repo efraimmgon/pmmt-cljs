@@ -2,8 +2,7 @@
   (:require [ajax.core :as ajax]
             [reagent.core :as r :refer [atom]]
             [re-frame.core :refer [dispatch reg-event-fx]]
-            [day8.re-frame.http-fx]
-            [cljs-dynamic-resources.core :as cdr]))
+            [day8.re-frame.http-fx]))
 
 ; local state ------------------------------------------------------------
 
@@ -18,9 +17,9 @@
 (defn setup! []
   (let [setup-ready? (r/cursor local-state [:setup-ready?])]
     (when-not @setup-ready?
-      (cdr/add-scripts!
-       [{:src (str "https://maps.googleapis.com/maps/api/js?"
-                   "key=" (:goog-api-key @local-state))}])
+      (c/add-script!
+       {:src (str "https://maps.googleapis.com/maps/api/js?"
+                  "key=" (:goog-api-key @local-state))})
       (reset! setup-ready? true))))
 
 ; tipo de logradouro + nome do logradouro + número do lote +

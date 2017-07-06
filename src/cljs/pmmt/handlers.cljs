@@ -3,7 +3,11 @@
              [reg-event-db reg-event-fx reg-fx]]
             [ajax.core :as ajax]
             [jayq.core :as jq]
-            [day8.re-frame.http-fx]))
+            day8.re-frame.http-fx
+            pmmt.handlers.geoprocessing
+            pmmt.handlers.report
+            pmmt.handlers.utils))
+
 
 ; Custom Coeffects ----------------------------------------------------
 
@@ -20,8 +24,7 @@
 (reg-event-db
  :set-initial-state
  (fn [db _]
-   (merge {:geo/scripts-loaded? false
-           :admin/active-panel :dashboard
+   (merge {:admin/active-panel :dashboard
            :admin/active-page "Dashboard"}
           db)))
 
@@ -96,10 +99,3 @@
                  :on-success [:remove-identity]
                  :response-format (ajax/json-response-format {:keywords? true})}
     :db db}))
-
-; Geo -------------------------------------------------------------------
-
-(reg-event-db
- :geo/scripts-loaded
- (fn [db _]
-   (assoc db :geo/scripts-loaded? true)))

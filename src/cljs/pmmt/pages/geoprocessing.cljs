@@ -1,13 +1,11 @@
-(ns pmmt.components.geo
+(ns pmmt.pages.geoprocessing
   (:require [clojure.string :refer [includes?]]
             [reagent.core :as r :refer [atom]]
             [re-frame.core :as re-frame :refer
-             [reg-event-db reg-event-fx reg-sub subscribe dispatch dispatch-sync]]
-            [day8.re-frame.http-fx]
-            [ajax.core :as ajax]
-            [cljs-dynamic-resources.core :as cdr]
+             [subscribe dispatch dispatch-sync]]
+            day8.re-frame.http-fx
             [pmmt.components.common :as c]
-            [pmmt.components.map :as m]))
+            [pmmt.components.map :as map]))
 
 ; aux. html ---------------------------------------------------------------
 
@@ -43,7 +41,9 @@
          "Como usar?"]]
        [help-text display?]])))
 
-; options for geo-form-modal form ----------------------------------------
+; ------------------------------------------------------------------------
+; Options for geo-form-modal form
+; ------------------------------------------------------------------------
 
 (defn naturezas->select-opts [options display]
   (if (> (count options) 1)
@@ -97,8 +97,14 @@
          {:on-click #(dispatch [:remove-modal])}
          "Cancelar"]]])))
 
+(def placeholder-values
+  {:natureza_id "todas"
+   :data_inicial "01/01/2015"
+   :data_final "31/01/2015"})
+
 (defn geo-form-modal []
-  (let [fields (atom {})
+  (let [;; placeholder-values while in dev
+        fields (atom placeholder-values)
         errors (atom {})
         cities (subscribe [:cities])
         naturezas (subscribe [:naturezas])
@@ -154,20 +160,23 @@
               {:src "/js/styledMarkers.js"}
               {:src "/js/oms.js"}])
 
-(defn geo-page []
-  (let [show-table? (subscribe [:show-table?])
-        scripts-loaded? (subscribe [:geo/scripts-loaded?])]
+(defonce setup-ready? (atom false))
+
+(defn main-page []
+  (let [show-table? (subscribe [:show-table?])]
     (dispatch-sync [:query-naturezas])
-    (when-not @scripts-loaded?
-      (cdr/add-scripts! scripts #(dispatch [:geo/scripts-loaded])))
+    (when-not @setup-ready?
+      (doseq [script scripts]
+        (c/add-script! script))
+      (reset! setup-ready? true))
     (fn []
       [:div.container
        [:div.page-header
         [:h1 "Georreferenciamento "
          [:small "de registros criminais"]]]
        ;; gmap
-       (when @scripts-loaded?
-        [m/map-outer])
+       (when @setup-ready?
+        [map/map-outer])
        [:br]
        [howto-panel]
        [:br]
@@ -175,4 +184,4 @@
         [settings-button]
         [selection-options-button]]
        (when @show-table?
-         [m/table])])))
+         [map/table])])))

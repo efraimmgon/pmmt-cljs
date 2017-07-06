@@ -1,102 +1,18 @@
-(ns pmmt.components.report
-  (:require-macros [reagent.ratom :refer [reaction]])
-  (:require [clojure.string :as string]
-            [clojure.pprint :as p]
-            [reagent.core :as r :refer [atom]]
-            [re-frame.core :as re-frame :refer
-             [reg-event-fx reg-event-db reg-sub subscribe dispatch dispatch-sync]]
-            [ajax.core :as ajax]
-            [cljs-dynamic-resources.core :as cdr]
-            [pmmt.components.common :as c]
-            [pmmt.validation :as v]))
+(ns pmmt.pages.report
+  (:require-macros
+   [reagent.ratom :refer [reaction]])
+  (:require
+   [clojure.string :as string]
+   [reagent.core :as r :refer [atom]]
+   [re-frame.core :as re-frame :refer
+    [subscribe dispatch dispatch-sync]]
+   [pmmt.components.common :as c]))
 
+; ------------------------------------------------------------------------
+; Components
+; ------------------------------------------------------------------------
 
-; Events -----------------------------------------------------------------
-
-(reg-event-fx
- :process-report-data
- (fn [{:keys [db]} [_ result]]
-   {:dispatch [:remove-modal]
-    :db (assoc db :report result)}))
-
-(reg-event-fx
- :query-report
- (fn [{:keys [db]} [_ fields errors]]
-   (if-let [err (v/validate-report-args @fields)]
-     {:reset [errors err]
-      :db db}
-     {:http-xhrio {:method :get
-                   :params @fields
-                   :uri "analise-criminal/relatorio/dados"
-                   :on-success [:process-report-data]
-                   :response-format (ajax/json-response-format {:keywords? true})}
-      :db (assoc db :report-params @fields)})))
-
-(defn plotly-did-update-pie [comp]
-  (let [;; get new data
-        [_ id plot-data] (r/argv comp)
-        container (.getElementById js/document (str "id_" (:name plot-data) "_graph"))
-        data [{:type "pie"
-               :labels (:labels plot-data)
-               :values (:vals plot-data)}]]
-    ;; clear previous plot from the div
-    (.purge js/Plotly container)
-    (.plot js/Plotly container (clj->js data))))
-
-;; TODO: side-effects
-(reg-event-fx
- :update-pie-plot
- (fn [{:keys [db]} [_ comp]]
-   (plotly-did-update-pie comp)
-   {:db db}))
-
-(defn plotly-did-update-bar [comp]
-  (let [;; get new data
-        [_ id plot-data] (r/argv comp)
-        container (.getElementById js/document (str "id_" id "_graph"))
-        data (for [row plot-data]
-               {:type "bar"
-                :x (:x row)
-                :y (:y row)
-                :name (:name row)})
-        layout {:xaxis {:title (string/capitalize id)}
-                :yaxis {:title "Registros"}}]
-    ;; clear previous plot from the div
-    (.purge js/Plotly container)
-    (.newPlot js/Plotly container (clj->js data) (clj->js layout))))
-
-;; TODO: side-effects
-(reg-event-fx
- :update-bar-plot
- (fn [{:keys [db]} [_ comp]]
-   (plotly-did-update-bar comp)
-   {:db db}))
-
-; Subscriptions ----------------------------------------------------------
-
-(reg-sub
- :plot-data
- (fn [db _]
-   (get-in db [:report :plots])))
-
-; helpers ----------------------------------------------------------------
-
-(defn incident-ids [s]
-  (vec
-    (map :id
-      (filter #(string/includes? (:nome %) (.normalize s "NFKD"))
-              @(subscribe [:naturezas])))))
-
-(defn format-opts [options value-key display-key]
-  (into []
-    (map (fn [m]
-           {:value (get m value-key)
-            :display (get m display-key)})
-         options)))
-
-; Components -------------------------------------------------------------
-
-; General Components
+; General Components -----------------------------------------------------
 
 (defn thead [headers]
   [:thead
@@ -104,8 +20,22 @@
      [:tr]
      (for [th headers]
        ^{:key th}
-        [:th th]))])
+        [:th.text-center th]))])
 
+(defn preppend-text-rules [k row]
+  (when (= k :fluctuation)
+    (if (< (:a row) (:b row))
+      "+ "
+      "- ")))
+
+(defn append-text-rules [k]
+  (when (= k :fluctuation) "%"))
+
+(defn class-rules [row]
+  (when (:fluctuation row)
+    (if (< (:a row) (:b row))
+      "bg-danger"
+      "bg-success")))
 ; rows => coll of rows; keyz => keys that access each row's field
 ; I should probably implement `keyz` as an optional field, which
 ; defaults to a range of the row's count
@@ -118,22 +48,26 @@
        [:tr]
        (for [k keyz]
          ^{:key k}
-         [:td (get row k)])))))
+         (let [preppended-text (preppend-text-rules k row)
+               appended-text (append-text-rules k)
+               class (class-rules row)]
+           [:td.text-center {:class class}
+            (str preppended-text (get row k) appended-text)]))))))
 
 (defn panel-with-table [title {:keys [headers rows keyz]}]
   [:div.panel.panel-default
-   [:div.panel-heading [:h3 title]]
+   [:div.panel-heading [:h3.text-center title]]
    [:table.table.table-bordered.table-striped
     [thead headers]
     [tbody rows keyz]]])
 
 (defn panel-with-body [title body]
   [:div.panel.panel-default
-   [:div.panel-heading [:h3 title]]
+   [:div.panel-heading [:h3.text-center title]]
    [:div.panel-body
     body]])
 
-; Plotly components
+; Plotly components -------------------------------------------------------
 
 (defn plotly-render [id]
   [panel-with-body
@@ -141,15 +75,15 @@
    [:div {:id (str "id_" id "_graph")
           :style {:width "100%" :height "400px"}}]])
 
-;; Note: we don't access the `row` parameter directly; we get it
+;; Note: we don't access the `values` parameter directly; we get it
 ;; later on by calling `r/argv` on the component
-(defn plotly-component-bar [id row]
+(defn plotly-component-bar [id values]
   (r/create-class {:display-name "plotly-component-bar"
                    :reagent-render #(plotly-render id)
                    :component-did-mount #(dispatch [:update-bar-plot %])
                    :component-did-update #(dispatch [:update-bar-plot %])}))
 
-(defn plotly-component-pie [id row]
+(defn plotly-component-pie [id values]
   (r/create-class {:display-name "plotly-component-bar"
                    :reagent-render #(plotly-render id)
                    :component-did-mount #(dispatch [:update-pie-plot %])
@@ -157,6 +91,7 @@
 
 (defn plot-comparison []
   (let [plot-data (subscribe [:plot-data])
+        ;;; ids and values for plots
         ; bar
         bar-vals (reaction (get-in @plot-data [:bar :vals]))
         ids-bar (reaction (get-in @plot-data [:bar :ids]))
@@ -165,20 +100,21 @@
         ids-pie (reaction (get-in @plot-data [:pie :ids]))]
     (fn []
       [:div
-        (into
-         [:div]
-         (map (fn [id row-a row-b]
+        (into [:div]
+         (map (fn [id a-values b-values]
                 ^{:key (str "bar-" id)}
-                [plotly-component-bar id [row-a row-b]])
-              @ids-bar (:a @bar-vals) (:b @bar-vals)))
-       (into
-        [:div]
-        (map (fn [id row]
+                [plotly-component-bar id [a-values b-values]])
+              @ids-bar
+              (:a @bar-vals)
+              (:b @bar-vals)))
+       (into [:div]
+        (map (fn [id values]
                ^{:key (str "pie-" id)}
-               [plotly-component-pie id row])
-             @ids-pie [(:a @pie-vals) (:b @pie-vals)]))])))
+               [plotly-component-pie id values])
+             @ids-pie
+             [(:a @pie-vals) (:b @pie-vals)]))])))
 
-; Main components
+; Main components -------------------------------------------------------
 
 ;; todo: report on page - not modal
 (def default-values {:data-inicial-a "01/01/2015"
@@ -192,11 +128,12 @@
         cities (subscribe [:cities])]
     (fn []
       [c/modal
-       [:div {:on-click #(print @fields)}
+       [:div
         "Relatório de análise criminal"]
        [:div
         [:div.well.well-sm
          [:strong "* campo obrigatório"]]
+        ;;; REQUIRED FIELDS
         [:fieldset
          [:legend "Período A"]
          [c/text-input "Data inicial" :data-inicial-a "dd/mm/aaaa" fields]
@@ -209,6 +146,7 @@
          [c/display-error errors :data-inicial-b]
          [c/text-input "Data final" :data-final-b "dd/mm/aaaa" fields]
          [c/display-error errors :data-final-b]]
+        ;;; OPTIONAL FIELDS
         [:fieldset
          [:legend "Filtros opcionais"]
          [:div.form-horizontal
@@ -240,24 +178,21 @@
          {:on-click #(dispatch [:remove-modal])}
          "Cancelar"]]])))
 
-(defn result-header [dates]
+(defn result-header [params]
   (into
-   [:div.container>div.row]
+   [:div.row]
    (map (fn [period [start end]]
           ^{:key period}
-          [:div.col-md-6.bg-primary
-          ;  [:div.panel.panel-primary
-          ;   [:panel-heading
-             [:h2
+          [:div.col-md-6
+           [:div.panel.panel-primary
+            [:panel-heading
+             [:h2.text-center
                period [:br]
-               (str start " a " end)]])
-        (cycle ["Período A" "Período B"])
-        dates)))
+               (str start " a " end)]]]])
+        ["Período A:", "Período B:"]
+        [[(:data-inicial-a @params), (:data-final-a @params)]
+         [(:data-inicial-b @params), (:data-final-b @params)]])))
 
-(reg-sub
- :optionals-result
- (fn [db _]
-   (get-in db [:report :optionals])))
 
 (defn optionals-result-panels []
   (let [optionals (subscribe [:optionals-result])]
@@ -269,7 +204,7 @@
             (into
              ^{:key opt-key}
               [:div.row
-               [:h2 (str "Análise: " (string/capitalize (name opt-key)))]]
+               [:h2.text-center (str "Análise: " (string/capitalize (name opt-key)))]]
               (for [[_ distinct-values] (vec values)]
                 ^{:key distinct-values}
                 (into
@@ -282,21 +217,25 @@
                       :rows rows
                       :keyz (range 2)}]))))))))))
 
+(defn params-sanity-check [params]
+  [:p.alert.alert-info
+   "Parâmetros: " (str @params)])
+
 (defn result-panel []
-  (let [params (subscribe [:get-db :report-params])
+  (let [;; sanity check
+        params (subscribe [:get-db :report-params])
+        ;; result from data crunching, after submission
         result (subscribe [:get-db :report])]
     (fn []
       (when @result
         [:div
-         [:p.bg-info
-          "Parâmetros: " (str @params)]
-         [result-header (list [(:data-inicial-a @params)
-                               (:data-final-a @params)]
-                              [(:data-inicial-b @params)
-                               (:data-final-b @params)])]
+         ;; sanity check
+         ;[params-sanity-check params]
+
+         [result-header params]
          [panel-with-table
           "Total de ocorrências registradas"
-          {:headers (list "Período A" "Período B" "Variação")
+          {:headers ["Período A", "Período B", "Variação"]
            :rows (list (get-in @result [:total]))
            :keyz (keys (get-in @result [:total]))}]
          [panel-with-table
@@ -310,22 +249,25 @@
 
 (defn report-button []
    [:span
-     [:button.btn.btn-default
+     [:button.btn.btn-block.btn-primary
       {:on-click #(dispatch [:modal report-form])}
       "Gerar novo relatório"] " "])
 
-(def scripts [{:src "https://cdn.plot.ly/plotly-latest.min.js"}])
+(defonce setup-ready?
+  (atom false))
 
-(defn report-page []
-  (let [scripts-loaded? (atom false)]
-    (dispatch-sync [:query-naturezas])
-    (when-not @scripts-loaded?
-      (cdr/add-scripts! scripts #(reset! scripts-loaded? true)))
-    (fn []
-      [:div.container
-       [:div.page-header
-        [:h1 "Relatório "
-         [:small "de registros criminais"]]]
-       [:div
-        [report-button] [:hr]]
-       [result-panel]])))
+(defn main-page []
+  ;; available crimes
+  (dispatch-sync [:query-naturezas])
+  ;; load `Plotly` for graphs
+  (when-not @setup-ready?
+    (c/add-script! {:src "https://cdn.plot.ly/plotly-latest.min.js"})
+    (reset! setup-ready? true))
+  (fn []
+    [:div.container
+     [:div.page-header
+      [:h1 "Relatório "
+       [:small "de registros criminais"]]]
+     [:div
+      [report-button] [:hr]]
+     [result-panel]]))

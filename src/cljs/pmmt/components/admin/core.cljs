@@ -5,7 +5,6 @@
              [subscribe dispatch]]
             [day8.re-frame.http-fx]
             [ajax.core :as ajax]
-            [cljs-dynamic-resources.core :as cdr]
             [pmmt.components.common :as c]
             [pmmt.components.admin.handlers]
             [pmmt.components.admin.dashboard :refer [dashboard]]
@@ -22,12 +21,11 @@
 ; misc -------------------------------------------------------------------
 
 (defn load-scripts! []
-  (cdr/add-scripts!
-   [{:src "/js/plugins/morris/raphael.min.js" :opts {:id "raphael-js"}}
-    {:src "/js/plugins/morris/morris.min.js" :opts {:id "morris-js"}}
-    {:src "/js/plugins/morris/morris-data.js" :opts {:id "morris-data-js"}}])
-  (cdr/add-style! "/css/sb-admin.css" nil {:id "sb_admin"})
-  (cdr/add-style! "/css/plugins/morris.css" nil {:id "morris_css"}))
+  (c/add-script! {:src "/js/plugins/morris/raphael.min.js"})
+  (c/add-script! {:src "/js/plugins/morris/morris.min.js"})
+  (c/add-script! {:src "/js/plugins/morris/morris-data.js"})
+  (c/add-style! {:href "/css/sb-admin.css"})
+  (c/add-style! {:href "/css/plugins/morris.css"}))
 
 (defn setup! []
   (let [setup-ready? (r/cursor local-state [:setup-ready?])]
