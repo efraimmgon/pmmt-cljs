@@ -13,11 +13,6 @@
 
 ; utility -----------------------------------------------------------
 
-(defn read-csv-file [file]
-  (-> file
-      (io/reader)
-      (csv/read-csv)))
-
 (defn csv->map [csv-data]
   (let [[header & rows] csv-data]
     (map (fn [row]
@@ -66,16 +61,10 @@
 
 ; Core ------------------------------------------------------------
 
-(defn file-processing [f]
-  (-> f
-      (io/reader)
-      (csv/read-csv)
-      (csv->map)))
-
 (defn save-data! [{:keys [tempfile filename content-type] :as file}]
   (try
     ; insert rows to db
-    (doseq [row (csv->map (read-csv-file tempfile))]
+    (doseq [row (csv->map (csv/read-csv (io/reader tempfile)))]
       (db/create-ocorrencia! (reports-coercer row)))
     (ok {:result :ok})
     (catch Exception e

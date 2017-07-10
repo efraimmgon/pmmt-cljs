@@ -5,9 +5,23 @@
    day8.re-frame.http-fx
    [reagent.core :as r :refer [atom]]
    [re-frame.core :as re-frame :refer
-    [reg-event-db reg-event-fx reg-fx reg-sub subscribe dispatch dispatch-sync]]
+    [reg-event-db reg-event-fx reg-sub subscribe dispatch dispatch-sync]]
    [pmmt.utils :as utils]
    [pmmt.validation :as v]))
+
+; ---------------------------------------------------------------------
+; Helpers
+; ---------------------------------------------------------------------
+
+(defn select-not-empty-keys [m ks]
+  (let [m (select-keys m ks)]
+    (apply dissoc
+           m
+           (for [[k v] m :when (nil? v)] k))))
+
+(defn dispatch-n [& handlers]
+  (doseq [handler handlers]
+    (dispatch handler)))
 
 ; ---------------------------------------------------------------------
 ; Subscriptions
@@ -49,7 +63,7 @@
    :ascending true})
 
 ; ---------------------------------------------------------------------
-; Helpers
+; Specific Helpers
 ; ---------------------------------------------------------------------
 
 (defn inc-ocorrencia! [n]
@@ -77,8 +91,8 @@
         gmap (subscribe [:get-db :gmap])
         info-window (subscribe [:get-db :info-window])]
     (.setMap marker @gmap)
-    (add-listiner! marker "click" #(do (.setContent @info-window) title
-                                       (.open @info-window) @gmap marker))
+    (add-listiner! marker "click" #(do (.setContent @info-window title)
+                                       (.open @info-window @gmap marker)))
     (add-listiner! marker "mouseover" #(.setOpacity marker 0.5))
     (add-listiner! marker "mouseout" #(.setOpacity marker 1))
     (dispatch [:append-marker marker])))
@@ -88,8 +102,9 @@
     (create-marker
      {:position {:lat (:latitude row),
                  :lng (:longitude row)}
+      ;; Title: crime, id, address
       :title (str "<b>"(:natureza row) " [" (:id row) "]</b><br/>"
-                  (string/join ", " [(:bairro row) (:via row) (:numero row)]))})))
+                  (string/join ", " (select-not-empty-keys row [:bairro :via :numero])))})))
 
 (defn create-heatmap-layer! [ocorrencias]
   (let [gmap (subscribe [:get-db :gmap])
@@ -105,7 +120,9 @@
     (.set heatmap "scaleRadius" false)
     (dispatch [:assoc-db :heatmap heatmap])))
 
-(defn clear-map! [db]
+(defn clear-map!
+  "Remove the markers, or heatmap layer, from the map"
+  [db]
   (when-let [markers (:markers db)]
     (doseq [m markers]
       (.setMap m nil)))
@@ -116,12 +133,10 @@
 ; Handlers
 ; ---------------------------------------------------------------------
 
-(reg-fx
- :create-marker-layer
- (fn [[marker-type data]]
-   (if (= marker-type :basic-marker)
-     (create-markers! data)
-     (create-heatmap-layer! data))))
+(defn create-marker-layer [marker-type data]
+  (if (= marker-type :basic-marker)
+    (create-markers! data)
+    (create-heatmap-layer! data)))
 
 (reg-event-db
  :map/initial-state
@@ -167,77 +182,80 @@
  (fn [db [_ marker]]
    (update db :markers conj marker)))
 
-(reg-event-fx
+(reg-event-db
  :clear-map
- (fn [{:keys [db]} _]
+ (fn [db _]
    (clear-map! db)
-   {:db (-> db
-            (assoc :markers nil))}))
+   (-> db
+       (assoc :markers nil))))
 
-(reg-event-fx
+(reg-event-db
  :reset-map-state
- (fn [{:keys [db]} _]
+ (fn [db _]
    (clear-map! db)
-   {:db (-> db
-            (assoc :ocorrencias [])
-            (assoc :ocorrencias-count nil)
-            (assoc :markers nil))}))
+   (-> db
+       (assoc :ocorrencias [])
+       (assoc :ocorrencias-count nil)
+       (assoc :markers nil))))
 
-(reg-event-fx
+(reg-event-db
  :update-marker-type
- (fn [{:keys [db]} [_ marker-type]]
-   (let [ocorrencias (:ocorrencias db)
+ (fn [db [_ marker-type]]
+   (let [map-data (:ocorrencias db)
          current-marker (:marker-type db)]
-     ;; only do something if the marker-types are different
+     (dispatch [:remove-modal])
+     ;; only do something if the selected marker is not the current one
      (if (not= marker-type current-marker)
-       (if (not-empty ocorrencias)
-         {:dispatch-n (list [:clear-map] [:remove-modal])
-          :create-marker-layer [marker-type ocorrencias]
-          :db (assoc db :marker-type marker-type)}
-         {:dispatch [:remove-modal]
-          :db (assoc db :marker-type marker-type)})
-       {:dispatch [:remove-modal]
-        :db db}))))
+       (if (not-empty map-data)
+         ;; if there's some data we populate the new marker layer with it
+         (do (dispatch [:clear-map])
+             (create-marker-layer marker-type map-data)
+             (assoc db :marker-type marker-type))
+         ;; otherwise we just set the new marker type
+         (assoc db marker-type marker-type))
+       db))))
 
-(reg-event-fx
+(reg-event-db
  :process-geo-dados
- (fn [{:keys [db]} [_ response]]
-   {:dispatch-n (list [:append-ocorrencias response] [:remove-modal])
-    :create-marker-layer [(:marker-type db) response]
-    :db (assoc db :show-table? true)}))
+ (fn [db [_ response]]
+   (dispatch [:append-ocorrencias response])
+   (dispatch [:remove-modal])
+   (create-marker-layer (:marker-type db) response)
+   (assoc db :show-table? true)))
 
-(reg-event-fx
+(reg-event-db
  :query-geo-dados
- (fn [{:keys [db]} [_ fields errors]]
-  (if-let [e (v/validate-map-args @fields)]
-    {:reset [errors e]
-     :db db}
-    {:http-xhrio {:method :get
-                  :uri "/analise-criminal/geo/dados"
-                  :params @fields
-                  :on-success [:process-geo-dados]
-                  :response-format (ajax/json-response-format {:keywords? true})}
-     :dispatch [:reset-map-state]
-     ;; store query params in db
-     :db (assoc db :geo-query-params @fields)})))
+ (fn [db [_ fields errors]]
+   (if-let [error (v/validate-map-args @fields)]
+     (do (reset! errors error)
+         db)
+     (do
+       (ajax/GET "/analise-criminal/geo/dados"
+                 {:params @fields
+                  :handler #(dispatch [:process-geo-dados %])
+                  :error-handler #(println (str %))})
+       ;; clear map and other data
+       (dispatch [:reset-map-state])
+       ;; store query params in db
+       (assoc db :geo-query-params @fields)))))
 
-(defn init-gmap [{:keys [db]} [_ comp]]
+(defn init-gmap [db [_ comp]]
   (if (:gmap db)
-    {:db db}
-    (let [map-canvas (r/dom-node comp)
-          ;; default map values
+    db
+    (let [canvas (r/dom-node comp)
+          ;; default map values (Sinop, MT, BR)
           map-opts (clj->js {:center {:lat -11.855275, :lng -55.505966}
                              :zoom 14
                              :mapTypeid js/google.maps.MapTypeId.ROADMAP})
           ;;; initialize google maps assets
           heatmap (js/google.maps.visualization.HeatmapLayer.)
-          gmap (js/google.maps.Map. map-canvas map-opts)
+          gmap (js/google.maps.Map. canvas map-opts)
           info-window (js/google.maps.InfoWindow.)]
-      {:db (-> db
-               (assoc :gmap gmap)
-               (assoc :info-window info-window)
-               (assoc :heatmap heatmap))})))
+      (-> db
+          (assoc :gmap gmap)
+          (assoc :info-window info-window)
+          (assoc :heatmap heatmap)))))
 
-(reg-event-fx
+(reg-event-db
  :init-gmap
  init-gmap)
