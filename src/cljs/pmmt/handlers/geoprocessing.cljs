@@ -4,8 +4,8 @@
    [ajax.core :as ajax]
    day8.re-frame.http-fx
    [reagent.core :as r :refer [atom]]
-   [re-frame.core :as re-frame :refer
-    [reg-event-db reg-event-fx reg-sub subscribe dispatch dispatch-sync]]
+   [re-frame.core :refer
+    [reg-event-db reg-sub subscribe dispatch]]
    [pmmt.utils :as utils]
    [pmmt.validation :as v]))
 

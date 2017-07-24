@@ -4,14 +4,10 @@
    [clojure.java.io :as io]
    [pmmt.routes.services.upload :as upload]))
 
-(def project-root (System/getProperty "user.dir"))
-(def db-resources-path
-  (io/file project-root "resources" "db" "sanitized"))
-
 ; ------------------------------------------------------------------------
 
 (defn words [text]
-  (re-seq #"[A-ZÇÂÃÁÉÊÍÓÔÕÚ]+" (.toUpperCase text)))
+  (re-seq #"[A-ZÇÂÃÁÉÊÍÓÔÕÚ\.]+" (.toUpperCase text)))
 
 (defn train
   "Count "
@@ -26,7 +22,7 @@
 (defn edits1
   "All edits that are one edit away from `word`."
   [word]
-  (let [letters (.toUpperCase "aáâãbcçdeéêfghiíjklmnoóôpqrstuúvwxyz")
+  (let [letters (.toUpperCase "aáâãbcçdeéêfghiíjklmnoóôõpqrstuúvwxyz")
         n (count word)]
     (distinct
      (concat
@@ -72,21 +68,60 @@
 
 ; ------------------------------------------------------------------------
 
+; Files ------------------------------------------------------------------
+
+(def project-root (System/getProperty "user.dir"))
+
+(def db-resources-path
+  (io/file project-root "resources" "db" "sanitized"))
+
 (def neighborhoods-file
   (-> project-root
       (io/file  "resources" "db" "sanitized" "bairros-sinop.csv")
       .getPath))
 
-(defn to-text [coll-of-colls]
+; Functions --------------------------------------------------------------
+
+
+(defn except-words
+  "Remove words that don't help our model"
+  [words]
+  (remove (fn [word]
+            ; we want to remove words small meaningless words
+            (or (< (count word) 3)
+                (= word "DAS")
+                (= word "DOS")))
+          words))
+
+
+(defn to-text
+  "Returns a string of all elements from the coll joined with a space"
+  [coll-of-colls]
   (reduce (fn [acc coll]
             (str acc " " (clojure.string/join " " coll)))
           "" coll-of-colls))
 
-(defn load-neighborhoods []
+(defn load-neighborhoods
+  "Load csv file with the control neighborhoods"
+  []
+  (with-open [reader (io/reader neighborhoods-file)]
+    (->> (csv/read-csv reader)
+         (map first)
+         set)))
+
+(defn load-incoming-neighborhoods [file]
+  (with-open [reader (io/reader file)]
+    (->> (csv/read-csv reader)
+         (map second)
+         set)))
+
+
+(defn load-neighborhoods-model []
   (with-open [reader (io/reader neighborhoods-file)]
     (-> (csv/read-csv reader)
         to-text
         words
+        except-words
         train)))
 
 (defn load-csv [file]
