@@ -4,10 +4,19 @@
             [ajax.core :as ajax]
             [jayq.core :as jq]
             day8.re-frame.http-fx
+            pmmt.handlers.admin
             pmmt.handlers.geoprocessing
             pmmt.handlers.report
             pmmt.handlers.utils))
 
+
+(defn deep-merge-with [f & maps]
+  (apply
+    (fn m [& maps]
+      (if (every? map? maps)
+        (apply merge-with m maps)
+        (apply f maps)))
+    maps))
 
 ; Custom Coeffects ----------------------------------------------------
 
@@ -24,9 +33,14 @@
 (reg-event-db
  :set-initial-state
  (fn [db _]
-   (merge {:admin/active-panel :dashboard
-           :admin/active-page "Dashboard"}
-          db)))
+   (deep-merge-with merge
+    {:admin/active-panel :dashboard
+     :admin/active-page "Dashboard"
+     :admin {:database {:setup-ready? false
+                        :active-panel :database
+                        ;; TODO: move to config file
+                        :tables ["cidade", "natureza", "ocorrencia", "tag", "document"]}}}
+    db)))
 
 (reg-event-fx
  :query-naturezas
