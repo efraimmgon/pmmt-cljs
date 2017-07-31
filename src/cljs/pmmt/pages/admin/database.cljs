@@ -100,18 +100,18 @@
         "Selecione também a cidade de referência das ocorrências a serem inseridas."]
        [:p "Observações:"]
        [:ul
-        [:li "Os campos devem estar organizados na seguinte ordem:"
+        [:li "As colunas devem ter os seguintes cabeçalhos, sem nenhuma acentuação:"
          [:ol
-          [:li "Naturezas"]
-          [:li "Bairro"]
-          [:li "Via (rua, avenida, etc)"]
-          [:li "Número"]
-          [:li "Hora"]
-          [:li "Data"]]]
+          [:li "NATUREZA"]
+          [:li "BAIRRO"]
+          [:li "VIA (rua, avenida, etc)"]
+          [:li "NUMERO"]
+          [:li "HORA"]
+          [:li "DATA"]]]
         [:li "Se a ocorrência não possuir data ou hora, os respectivos campos devem
              estar em branco."]
-        [:li "A hora deve estar no formato hh:mm."]
-        [:li "A data deve estar no formato dd/mm/aaaa."]
+        [:li "A hora deve estar no formato hh:mm:ss."]
+        [:li "A data deve estar no formato aaaa-mm-dd."]
         [:li "As seguintes naturezas estão disponíveis para inserção:"
           [:ul
            (for [n @naturezas]

@@ -4,6 +4,7 @@
             [clojure.tools.logging :as log]
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
+            [clojure.string :as string]
             [clojure.walk :as walk]
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
@@ -27,8 +28,9 @@
      (Integer. s)))
 
 (defn str-to-double [s]
-  (if-not (clojure.string/blank? s)
-     (Double. s)))
+  (if (clojure.string/blank? s)
+    0.0
+    (Double. s)))
 
 (defn str-to-long [s]
   ; tc/to-long returns 0 if its param is nil
@@ -47,12 +49,17 @@
       (-> (tf/parse time-format s)
           (c/joda->java-time)))))
 
+(defn crime->id [s]
+  (get (c/CRIMES-AND-IDS) s))
+
 (defn reports-coercer [m]
   (-> m
       (update :data str-to-date)
+      (assoc :natureza_id (crime->id (:natureza m)))
+      (dissoc :natureza)
       (update :latitude str-to-double)
       (update :longitude str-to-double)
-      (update :natureza_id str-to-int)
+      ;(update :natureza_id str-to-int)
       (update :hora str-to-time)))
 
 (defn natureza-coercer [m]

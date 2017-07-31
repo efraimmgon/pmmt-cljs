@@ -123,6 +123,13 @@
               (assoc acc (:id n) (:nome n)))
             {} (NATUREZAS-ALL))))
 
+(def CRIMES-AND-IDS
+  (memoize
+   (fn []
+     (into {}
+           (map (juxt :nome :id) (db/get-naturezas))))))
+
+
 (def ROUBO
   (memoize
    (fn []

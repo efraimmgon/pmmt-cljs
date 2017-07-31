@@ -44,12 +44,12 @@
          [:fieldset.form-group
           [:label {:for "file"} "selecione um arquivo para carregar"]
           [:input.form-control {:id "file" :name "file" :type "file"}]]]
-        [:button.btn.btn-primary
-         {:on-click #(dispatch [:upload-file form-id status])}
-         "Carregar"]
         [:button.btn.btn-danger.pull-right
          {:on-click #(dispatch [:remove-modal])}
-         "Cancelar"]]])))
+         "Cancelar"]
+        [:button.btn.btn-primary
+         {:on-click #(dispatch [:upload-file form-id status])}
+         "Carregar"]]])))
 
 (defn update-db-button []
   [:button.btn.btn-primary
