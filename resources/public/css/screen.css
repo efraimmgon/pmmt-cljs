@@ -129,3 +129,10 @@ table.sortable th:hover {
 .user-actions {
 	margin-left: -80px;
 }
+
+.loading {
+	margin: auto;
+	font-weight: bold;
+	background-color: white;
+	color: black;
+}

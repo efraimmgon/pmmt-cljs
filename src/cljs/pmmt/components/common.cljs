@@ -1,7 +1,8 @@
 (ns pmmt.components.common
   (:require
    [dommy.core :as dommy :refer-macros [sel sel1]]
-   [goog.net.jsloader :as jsl]))
+   [goog.net.jsloader :as jsl]
+   [reagent.core :as r :refer [atom]]))
 
 ; --------------------------------------------------------------------
 ; MISC
@@ -212,8 +213,8 @@
              :loading component
              :loaded component}"
   [{:keys [scripts loading loaded]}]
-  (let [loaded? (reagent/atom false)]
-    (reagent/create-class
+  (let [loaded? (atom false)]
+    (r/create-class
      {:component-did-mount (fn [_]
                              (let [not-loaded (clj->js (filter-loaded scripts))]
                                (.then (jsl/loadMany not-loaded)

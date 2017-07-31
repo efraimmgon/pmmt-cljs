@@ -3,17 +3,38 @@
    [pmmt.macros :refer [log]])
   (:require
    [ajax.core :as ajax]
-   [re-frame.core :refer [reg-event-db reg-sub]]
+   [clojure.string :as string]
+   [re-frame.core :refer [dispatch reg-event-db reg-sub]]
    [pmmt.subs :refer [query]]))
-
 
 ; -------------------------------------------------------------------------
 ; Subscriptions
 ; -------------------------------------------------------------------------
 
-(reg-sub :admin/active-panel query)
+(reg-sub
+ :admin/active-panel
+ (fn [db _]
+   (get-in db [:admin :active-panel])))
 
-(reg-sub :admin/active-page query)
+(reg-sub
+ :admin/active-page
+ (fn [db _]
+   (get-in db [:admin :active-page])))
+
+(reg-sub
+ :admin/active-sidebar
+ (fn [db _]
+   (get-in db [:admin :active-sidebar])))
+
+(reg-sub
+ :admin/table-rows
+ (fn [db [_ table]]
+   (get-in db [:admin table :rows])))
+
+(reg-sub
+ :admin/users
+ (fn [db _]
+   (get-in db [:users])))
 
 (reg-sub
  :admin.database/setup-ready?
@@ -32,26 +53,18 @@
    (get-in db [:admin :database :tables])))
 
 (reg-sub
- :admin/table-rows
- (fn [db [_ table]]
-   (get-in db [:admin table :rows])))
+ :admin.navbar/active-menu
+ (fn [db _]
+   (get-in db [:admin :navbar :active-menu])))
 
-(reg-sub :users query)
+(reg-sub
+ :admin.users/setup-ready?
+ (fn [db _]
+   (get-in db [:admin :users :setup-ready?])))
 
 ; -------------------------------------------------------------------------
 ; Handlers
 ; -------------------------------------------------------------------------
-
-(reg-event-db
- :admin.database/setup-ready
- (fn [db _]
-   (assoc-in db [:admin :database :setup-ready?] true)))
-
-(reg-event-db
- :admin/set-table-data
- (fn [db [_ table rows]]
-   (assoc-in db [:admin table :rows]
-             (vec (partition-all 15 rows)))))
 
 ;; get db rows from `table`
 (reg-event-db
@@ -61,6 +74,56 @@
              {:handler #(dispatch [:admin/set-table-data table %])
               :error-handler #(log %)})
    db))
+
+(reg-event-db
+ :admin/search-table
+ (fn [db [_ table fields errors]]
+   ;; NOTE: uri is in format "/:table/:field/:id"
+   (ajax/GET (str "/db/" table "/" (string/lower-case (:field @fields)) "/" (:value @fields))
+             {:handler #(do (dispatch [:admin/set-table-data table %])
+                            (dispatch [:remove-modal]))
+              :error-handler #(reset! errors %)})
+   db))
+
+(reg-event-db
+ :admin/set-active-panel
+ (fn [db [_ title panel-id]]
+   (-> db
+      (assoc-in [:admin :active-page] title)
+      (assoc-in [:admin :active-panel] panel-id))))
+
+(reg-event-db
+ :admin/set-active-sidebar
+ (fn [db [_ title sidebar-id]]
+   (-> db
+       (assoc-in [:admin :sidebar-title] title)
+       (assoc-in [:admin :active-sidebar] sidebar-id))))
+
+(reg-event-db
+ :admin/set-table-data
+ (fn [db [_ table rows]]
+   (if-not (empty? rows)
+     (assoc-in db [:admin table :rows]
+               (vec (partition-all 15 rows)))
+     (do (js/alert "Nada encontrado")
+         db))))
+
+(reg-event-db
+ :admin.database/setup-ready
+ (fn [db _]
+   (assoc-in db [:admin :database :setup-ready?] true)))
+
+(reg-event-db
+ :admin.database/set-active-panel
+ (fn [db [_ panel-id]]
+   (assoc-in db [:admin :database :active-panel] panel-id)))
+
+(reg-event-db
+ :admin.navbar/toggle-active-menu
+ (fn [db [_ id]]
+   (if (= id (get-in db [:admin :navbar :active-menu]))
+     (assoc-in db [:admin :navbar :active-menu] nil)
+     (assoc-in db [:admin :navbar :active-menu] id))))
 
 (reg-event-db
  :get-users
@@ -73,21 +136,5 @@
 (reg-event-db
  :set-users
  (fn [db [_ users]]
+
    (assoc db :users users)))
-
-(reg-event-db
- :admin/search-table
- (fn [db [_ table fields errors]]
-   ;; uri is in format "/:table/:field/:id"
-   (ajax/GET (str "/db/" table "/" (:field @fields) "/" (:value @fields))
-             {:handler #(do (dispatch [:admin/create-rows table %])
-                            (dispatch [:admin/remove-modal]))
-              :error-handler #(reset! errors %)})
-   db))
-
-(reg-event-db
- :admin/set-active-panel
- (fn [db [_ title panel]]
-   (assoc db
-          :admin/active-page title
-          :admin/active-panel panel)))

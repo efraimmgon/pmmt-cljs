@@ -34,9 +34,10 @@
  :set-initial-state
  (fn [db _]
    (deep-merge-with merge
-    {:admin/active-panel :dashboard
-     :admin/active-page "Dashboard"
-     :admin {:database {:setup-ready? false
+    {
+     :admin {:active-page "Painel"
+             :active-panel :dashboard
+             :database {:setup-ready? false
                         :active-panel :database
                         ;; TODO: move to config file
                         :tables ["cidade", "natureza", "ocorrencia", "tag", "document"]}}}

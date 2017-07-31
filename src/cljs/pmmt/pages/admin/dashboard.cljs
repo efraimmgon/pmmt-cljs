@@ -1,4 +1,6 @@
-(ns pmmt.pages.admin.dashboard)
+(ns pmmt.pages.admin.dashboard
+  (:require
+   [reagent.core :as r]))
 
 ; -----------------------------------------------------------------------
 ; Dashboard Components
@@ -58,30 +60,6 @@
       [:span.pull-left "View Details"]
       [:span.pull-right [:i.fa.fa-arrow-circle-right]]
       [:div.clearfix]]]]])
-
-(defn area-chart []
-  [:div.row
-   [:div.col-lg-12
-    [:div.panel.panel-default
-     [:div.panel-heading
-      [:h3.panel-title [:i.fa.fa-bar-chart-o.fa-fw] " Area Chart"]]
-     [:div.panel-body [:div#morris-area-chart]]]]])
-
-(defn donut-chart []
-  [:div.row
-    [:div.col-lg-12
-     [:div.panel.panel-default
-      [:div.panel-heading
-       [:h3.panel-title
-        [:i.fa.fa-long-arrow-right.fa-fw]
-        " Donut Chart"]]
-      [:div.panel-body
-       [:div#morris-donut-chart]
-       [:div.text-right
-        [:a
-         {:href "#"}
-         "View Details "
-         [:i.fa.fa-arrow-circle-right]]]]]]])
 
 (defn tasks-panel []
   [:div.row
@@ -204,10 +182,7 @@
 (defn dashboard []
   ; "<!-- Page Heading -->"
   [:div
-    [content-summary]
-    ; charts
-    [area-chart]
-    [donut-chart]
-    ; panels
-    [tasks-panel]
-    [transactions-panel]])
+   [:h3 "Nothing to see."]])
+   ;[content-summary]])
+   ; panels
+   ;[tasks-panel]])

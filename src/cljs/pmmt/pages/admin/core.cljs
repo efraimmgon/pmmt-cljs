@@ -3,21 +3,23 @@
    [reagent.core :as r :refer [atom]]
    [re-frame.core :as re-frame :refer [subscribe dispatch]]
    [pmmt.components.common :as c]
-   [pmmt.components.admin.dashboard :refer [dashboard]]
-   [pmmt.components.admin.database :refer
-     [database-panel-interface]]
-   [pmmt.components.admin.navbar :refer [navbar]]
-   [pmmt.components.admin.users :refer [users-interface]]))
+   [pmmt.pages.admin.dashboard :refer [dashboard]]
+   [pmmt.pages.admin.database :as database]
+   [pmmt.pages.admin.navbar :as navbar]
+   [pmmt.pages.admin.users :refer [users-template]]))
 
-; local state ------------------------------------------------------------
+; -----------------------------------------------------------------
+; Local State
+; -----------------------------------------------------------------
 
 (defonce local-state
   (atom {:setup-ready? false}))
 
-; Setup ------------------------------------------------------------------
+; -----------------------------------------------------------------
+; Setup
+; -----------------------------------------------------------------
 
 (defn load-scripts! []
-  (c/add-script! {:src "/js/plugins/morris/morris-data.js"})
   (c/add-style! {:href "/css/sb-admin.css"})
   (c/add-style! {:href "/css/plugins/morris.css"}))
 
@@ -27,26 +29,29 @@
       (load-scripts!)
       (reset! setup-ready? true))))
 
-; aux. components --------------------------------------------------------
+; -----------------------------------------------------------------
+; Aux. Components
+; -----------------------------------------------------------------
 
 (defn page-heading []
-  (let [active-page (subscribe [:admin/active-page])]
-    (fn []
-      [:div.row
-       [:div.col-lg-12
-        [:h1.page-header
-         @active-page]
-        [:ol.breadcrumb
-         [:li.active
-          [:i.fa.fa-dashboard] " "
-          @active-page]]]])))
+  (r/with-let [active-page (subscribe [:admin/active-page])]
+    [:div.row
+     [:div.col-lg-12
+      [:h1.page-header
+       @active-page]
+      [:ol.breadcrumb
+       [:li.active
+        [:i.fa.fa-dashboard] " "
+        @active-page]]]]))
 
-; main components ---------------------------------------------------------
+; -----------------------------------------------------------------
+; Navigation
+; -----------------------------------------------------------------
 
 (def panels
   {:dashboard dashboard
-   :database database-panel-interface
-   :users users-interface})
+   :database database/main
+   :users users-template})
 
 (defn main-content []
   (let [active-panel (subscribe [:admin/active-panel])]
@@ -56,23 +61,21 @@
         [page-heading]
         [(panels @active-panel)]]])))
 
-(defn main-page []
-  (setup!)
-  (fn []
-    [:div#wrapper
-     [navbar]
-     [main-content]]))
+; -----------------------------------------------------------------
+; Main
+; -----------------------------------------------------------------
 
 (def scripts
   {#(exists? js/Raphael) "/js/plugins/morris/raphael.min.js"
    #(exists? js/Morris) "/js/plugins/morris/morris.min.js"})
 
-(defn main-page []
+;; TODO: change name
+(defn main-template []
+  (setup!)
   (fn []
-    (setup!)
     [c/js-loader
-     {:scripts {#(exists? js/Stripe) "https://js.stripe.com/v2/"}
-      :loading [:img {:src "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif"}]
+     {:scripts scripts
+      :loading [:div.loading "Loading..."]
       :loaded [:div#wrapper
-               [navbar]
+               [navbar/main]
                [main-content]]}]))

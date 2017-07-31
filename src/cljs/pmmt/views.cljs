@@ -2,8 +2,8 @@
   (:require
    [reagent.core :as r :refer [atom]]
    [re-frame.core :as re-frame :refer [subscribe dispatch]]
-   [pmmt.components.admin :as admin]
-   [pmmt.components.admin.core :as adm]
+   ;[pmmt.components.admin :as admin]
+   [pmmt.pages.admin.core :as adm]
    [pmmt.components.biblioteca :as b]
    [pmmt.pages.geoprocessing :as geo]
    [pmmt.components.login :as login]
@@ -97,7 +97,7 @@
 
 (def pages
   {:home #'home-page
-   :admin #'adm/admin-page
+   :admin #'adm/main-template
    :utilitarios #'u/main-page
    :biblioteca #'b/biblioteca-page
    :relatorio #'report/main-page
