@@ -29,7 +29,7 @@
 
 (defn str-to-double [s]
   (if (clojure.string/blank? s)
-    0.0
+    nil
     (Double. s)))
 
 (defn str-to-long [s]

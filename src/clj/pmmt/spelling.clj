@@ -6,6 +6,12 @@
 
 ; ------------------------------------------------------------------------
 
+(defn deaccent [s]
+  "Remove accent from string"
+  ;; http://www.matt-reid.co.uk/blog_post.php?id=69
+  (let [normalized (java.text.Normalizer/normalize s java.text.Normalizer$Form/NFD)]
+    (clojure.string/replace normalized #"\p{InCombiningDiacriticalMarks}+" "")))
+
 (defn words [text]
   (re-seq #"[A-ZÇÂÃÁÉÊÍÓÔÕÚ\.]+" (.toUpperCase text)))
 

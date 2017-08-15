@@ -1,8 +1,11 @@
 (ns pmmt.components.admin.geocode
-  (:require [ajax.core :as ajax]
-            [reagent.core :as r :refer [atom]]
-            [re-frame.core :refer [dispatch reg-event-fx]]
-            [day8.re-frame.http-fx]))
+  (:require-macros
+   [pmmt.macros :refer [log]])
+  (:require
+   [ajax.core :as ajax]
+   [reagent.core :as r :refer [atom]]
+   [re-frame.core :refer [dispatch reg-event-db reg-event-fx]]
+   [pmmt.components.common :as c]))
 
 ; local state ------------------------------------------------------------
 
@@ -32,45 +35,70 @@
 
 ; events -----------------------------------------------------------------
 
-(defn geocode [address]
+(defn extract-lat-lng [GeocoderResult]
+  (let [lat (fn [results] (-> results (get 0) .-geometry .-location (.lat)))
+        lng (fn [results] (-> results (get 0) .-geometry .-location (.lng)))]
+    ; save the result in local-state
+    (swap! local-state update :result conj
+          ; check if goog could geocoded the address partially only
+      (if (and (-> GeocoderResult (get 0) .-partial_match)
+               (= (lat GeocoderResult) (get-in @local-state [:sinop :lat]))
+               (= (lng GeocoderResult) (get-in @local-state [:sinop :lng])))
+        ; default value in db is null; we must change it
+        ; so that it won't be fetched again
+        {:lat 0.0, :lng 0.0}
+        {:lat (lat GeocoderResult)
+         :lng (lng GeocoderResult)}))))
+
+(defn geocode
+  "Use `js/google.maps.Geocoder` to geocode an address"
+  [geocoder-request query-limit?]
   (let [geocoder (new js/google.maps.Geocoder)
-        opts (clj->js {:address address})
-        lat (fn [results] (-> results (get 0) .-geometry .-location (.lat)))
-        lng (fn [results] (-> results (get 0) .-geometry .-location (.lng)))
-        handler (fn [results status]
-                  ; save the result in local-state
-                  (swap! local-state update-in [:result] conj
-                    (if (= status js/google.maps.GeocoderStatus.OK)
-                      ; check if goog could geocoded the address partially only
-                      (if (and (-> results (get 0) .-partial_match)
-                               (= (lat results) (get-in @local-state [:sinop :lat]))
-                               (= (lng results) (get-in @local-state [:sinop :lng])))
-                        ; default value in db is null; we must change it
-                        ; so that it won't be fetched again
-                        {:lat 0.0, :lng 0.0}
-                        {:lat (lat results)
-                         :lng (lng results)})
-                      {:error {:status status}})))]
+        opts (clj->js geocoder-request)
+        handler (fn [GeocoderResult status]
+                  (condp = status
+                         "OK" (extract-lat-lng GeocoderResult)
+                         "OVER_QUERY_LIMIT" (reset! query-limit? true)
+                         (log status)))]
     (.geocode geocoder opts handler)))
 
-(reg-event-fx
- :process-geocode-data
- (fn [{:keys [db]} [_ geocode-data]]
+(defn run-geocode
+  "Applies geocode to each address given, making sure gmap's API
+   policies are followed."
+  ([addresses]
+   (run-geocode addresses {:queries (atom 0), :query-limit? (atom false)}))
+  ([addresses {:keys [queries, start, query-limit?] :as control}]
+   (cond
+     @query-limit? (js/alert "OVER_QUERY_LIMIT")
+     ;; NOTE: <implementatian simplicity> each 50 queries we wait
+     ;;       for a minutebefore continuing execution so we don't
+     ;;       exceed our 50 queries/s limit.
+     (= @queries 50)
+     (js/setTimeout
+      #(run-geocode addresses (assoc control :queries (atom 0)))
+      1000)
 
-   (dorun
-    (map geocode
-        ["Avenida Governador Júlio Campos, 1111 - Setor Comercial, Sinop - MT, Brasil"
-         "Avenida das Itaúbas, 3777 - Setor Comercial, Sinop - MT, Brasil"
-         "Rua Ouro Preto, 103 - Jardim Belo Horizonte, Sinop - MT, Brasil"]))
-   {:db db}))
+     (seq addresses)
+     (do (geocode (first addresses) query-limit?)
+         (recur (rest addresses) (udpate control :queries swap! inc)))
 
-(reg-event-fx
+     (empty? addresses)
+     (js/alert "Fini!"))))
+
+; NOTE: sample test data
+(def addresses
+  [{:address "Avenida Governador Júlio Campos, 1111 - Setor Comercial, Sinop - MT, Brasil"}
+   {:address "Avenida das Itaúbas, 3777 - Setor Comercial, Sinop - MT, Brasil"}
+   {:address "Rua Ouro Preto, 103 - Jardim Belo Horizonte, Sinop - MT, Brasil"}])
+
+(reg-event-db
  :admin/sync-lat-lng
- (fn [{:keys [db]} _]
-   {:http-xhrio {:method :get
-                 :uri "/db/ocorrencia/geocode"
-                 :on-success [:process-geocode-data]
-                 :response-format (ajax/json-response-format {:keywords? true})}}))
+ (fn [db _]
+   (ajax/GET "/db/ocorrencia/geocode"
+             ;; NOTE: ------> change this line!!! <------
+             {:handler #(run-geocode addresses)
+              :error-handler #(log %)})
+   db))
 
 ; components -------------------------------------------------------------
 
@@ -97,5 +125,5 @@
        [:div.panel-body
         [sync-info]
         [sync-button]
-        (when (seq @result)
+        (when-not (empty? @result)
           [:h3 "Resultado: " (str @result)])]])))
