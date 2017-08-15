@@ -7,20 +7,6 @@
             [clj-time.format :as tf]
             [clojure.java.io :as io]))
 
-;;; Biblioteca
-
-(defn tags-documents []
-  (let [docs-tags (db/get-documents-and-tags-id)]
-    (reduce (fn [acc tag]
-              (conj acc {:tag tag
-                         :docs (filter #(= (:id tag)
-                                           (:tag_id %))
-                                       docs-tags)}))
-            [] (db/get-tags))))
-
-(defn list-tags-documents []
-  (response/ok
-   (tags-documents)))
 
 ;;; Utilitários
 

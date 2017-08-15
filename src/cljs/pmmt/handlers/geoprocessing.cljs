@@ -33,10 +33,10 @@
  (fn [query-v args]
    [(subscribe [:get-db :sort-key])
     (subscribe [:get-db :comp])
-    (subscribe [:get-db :ocorrencias])
+    (subscribe [:get-db :crime-reports])
     (subscribe [:get-db :ascending])])
- (fn [[sort-key comp ocorrencias ascending] _]
-   (let [sorted (sort-by sort-key comp ocorrencias)]
+ (fn [[sort-key comp crime-reports ascending] _]
+   (let [sorted (sort-by sort-key comp crime-reports)]
      (if ascending
        sorted
        (rseq sorted)))))
@@ -54,8 +54,8 @@
    ;; :basic-marker
    :markers nil
    :info-window nil
-   :ocorrencias-count {:total 0, :roubo 0, :furto 0, :droga 0, :homicidio 0, :outros 0}
-   :ocorrencias []
+   :crime-reports-count {:total 0, :roubo 0, :furto 0, :droga 0, :homicidio 0, :outros 0}
+   :crime-reports []
    ;; sortable table
    :show-table? false
    :sort-key :natureza
@@ -66,7 +66,7 @@
 ; Specific Helpers
 ; ---------------------------------------------------------------------
 
-(defn inc-ocorrencia! [n]
+(defn inc-crime-report! [n]
   (cond
     (string/includes? n "Roubo") (dispatch [:inc-count :roubo])
     (string/includes? n "Furto") (dispatch [:inc-count :furto])
@@ -106,13 +106,13 @@
       :title (str "<b>"(:natureza row) " [" (:id row) "]</b><br/>"
                   (string/join ", " (select-not-empty-keys row [:bairro :via :numero])))})))
 
-(defn create-heatmap-layer! [ocorrencias]
+(defn create-heatmap-layer! [crime-reports]
   (let [gmap (subscribe [:get-db :gmap])
         data (map (fn [row]
                     (js/google.maps.LatLng.
                      (clj->js (:latitude row))
                      (clj->js (:longitude row))))
-                  ocorrencias)
+                  crime-reports)
         heatmap-opts {:data data, :dissipating false, :map @gmap}
         heatmap (js/google.maps.visualization.HeatmapLayer.
                  (clj->js heatmap-opts))]
@@ -144,18 +144,18 @@
    (merge db initial-state)))
 
 (reg-event-db
- :append-ocorrencias
+ :append-crime-reports
  (fn [db [_ rows]]
    (let [updated-rows
          (map (fn [row]
-                (inc-ocorrencia! (:natureza row))
+                (inc-crime-report! (:natureza row))
                 ; TODO: update fields with nil when blank
                 (-> row
                     (update :hora utils/long->time-str)
                     (update :data utils/long->date-str)
                     (assoc :weekday (utils/long->weekday (:data row)))))
               rows)]
-     (assoc db :ocorrencias updated-rows))))
+     (assoc db :crime-reports updated-rows))))
 
 ;  takes an optional compare function
 (reg-event-db
@@ -175,7 +175,7 @@
 (reg-event-db
  :inc-count
  (fn [db [_ id]]
-   (update-in db [:ocorrencias-count id] inc)))
+   (update-in db [:crime-reports-count id] inc)))
 
 (reg-event-db
  :append-marker
@@ -194,14 +194,14 @@
  (fn [db _]
    (clear-map! db)
    (-> db
-       (assoc :ocorrencias [])
-       (assoc :ocorrencias-count nil)
+       (assoc :crime-reports [])
+       (assoc :crime-reports-count nil)
        (assoc :markers nil))))
 
 (reg-event-db
  :update-marker-type
  (fn [db [_ marker-type]]
-   (let [map-data (:ocorrencias db)
+   (let [map-data (:crime-reports db)
          current-marker (:marker-type db)]
      (dispatch [:remove-modal])
      ;; only do something if the selected marker is not the current one
@@ -218,7 +218,7 @@
 (reg-event-db
  :process-geo-dados
  (fn [db [_ response]]
-   (dispatch [:append-ocorrencias response])
+   (dispatch [:append-crime-reports response])
    (dispatch [:remove-modal])
    (create-marker-layer (:marker-type db) response)
    (assoc db :show-table? true)))

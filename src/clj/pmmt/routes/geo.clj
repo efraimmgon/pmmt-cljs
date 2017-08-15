@@ -34,7 +34,7 @@
       (assoc :natureza (get (c/NATUREZAS-ID-ALL) (:natureza_id row)))))
 
 (defn get-geo-data [params]
-  (let [rows (db/get-ocorrencias-with-geo
+  (let [rows (db/get-crime-reports-with-geo
               (geo-db-coercer params))]
     (map adjust-to-geo rows)))
 

@@ -20,7 +20,7 @@
 
 (defn get-ungeocoded-reports []
   (response/ok
-   (db/reports-with-null-coordinates)))
+   (db/crime-reports-with-null-coordinates)))
 
 (defn get-users []
   (response/ok

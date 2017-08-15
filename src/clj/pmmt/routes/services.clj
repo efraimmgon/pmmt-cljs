@@ -98,11 +98,6 @@
         :query-params [a :- String]
         (ok (str "param: " a " // params: " (:params req))))
 
-  ; biblioteca
-  (GET "/tags-and-documents" req
-       :summary "retrieve all tags and respective documents"
-       :return [TagDocuments]
-       (home/list-tags-documents))
 
   (GET "/calculate-delta" []
        :summary "Calculate a time delta"
@@ -141,8 +136,8 @@
                      field :- String
                      value :- String]
        (admin/fetch-rows-by-value table field value))
-  (GET "/db/ocorrencia/geocode" []
-       :summary "Retrive `ocorrencia` rows with `latitude` = null"
+  (GET "/db/crime-reports/geocode" []
+       :summary "Retrive `crime-reports` rows with `latitude` = null"
        (admin/get-ungeocoded-reports))
   (POST "/upload" req
         :multipart-params [file :- TempFileUpload]

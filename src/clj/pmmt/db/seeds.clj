@@ -9,7 +9,7 @@
 ; ; reset db
 ; (defn reset-db! []
 ;   (db/delete-all-natureza!)
-;   (db/delete-all-ocorrencia!)
+;   (db/delete-all-crime-report!)
 ;   (db/delete-all-users!))
 ;
 ; ; data
@@ -19,8 +19,8 @@
 ; (def naturezas
 ;   (read-csv "/Users/efraimmgon/relatorio-db/db_naturezas.csv"))
 ;
-; (def ocorrencias
-;   (read-csv "/Users/efraimmgon/relatorio-db/db_ocorrencias.csv"))
+; (def crime-reports
+;   (read-csv "/Users/efraimmgon/relatorio-db/db_crime-reports.csv"))
 ;
 ; (defn insert-data! []
 ;   ; create users
@@ -31,6 +31,6 @@
 ;   (doseq [natureza naturezas]
 ;     (db/create-natureza-with-id! (upload/natureza-coercer natureza)))
 ;
-;   ; create ocorrencias
-;   (doseq [ocorrencia ocorrencias]
-;     (db/create-ocorrencia! (upload/reports-coercer ocorrencia))))
+;   ; create crime-reports
+;   (doseq [crime-report crime-reports]
+;     (db/create-crime-report! (upload/reports-coercer crime-report))))

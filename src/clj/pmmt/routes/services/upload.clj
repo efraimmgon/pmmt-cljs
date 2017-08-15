@@ -72,7 +72,7 @@
   (try
     ; insert rows to db
     (doseq [row (csv->map (csv/read-csv (io/reader tempfile)))]
-      (db/create-ocorrencia! (reports-coercer row)))
+      (db/create-crime-report! (reports-coercer row)))
     (ok {:result :ok})
     (catch Exception e
       (log/error e)

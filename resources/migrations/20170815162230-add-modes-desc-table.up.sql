@@ -1,0 +1,4 @@
+CREATE TABLE modes_desc (
+  id SERIAL PRIMARY KEY,
+  type TEXT UNIQUE NOT NULL
+);

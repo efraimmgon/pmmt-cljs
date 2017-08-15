@@ -94,7 +94,7 @@
 (reg-event-db
  :admin/sync-lat-lng
  (fn [db _]
-   (ajax/GET "/db/ocorrencia/geocode"
+   (ajax/GET "/db/crime-reports/geocode"
              ;; NOTE: ------> change this line!!! <------
              {:handler #(run-geocode addresses)
               :error-handler #(log %)})

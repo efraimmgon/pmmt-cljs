@@ -1,63 +1,65 @@
 -- :name get-naturezas :? :*
--- retrive all `natureza` records
-SELECT id, nome FROM natureza
+-- retrive all `crimes` records
+SELECT id, type FROM crimes
 
--- :name get-ocorrencias-with-geo :? :*
--- :doc retrieves ocorrencias for geolocalization (lat and lng not null)
-SELECT * FROM ocorrencia
-  WHERE data BETWEEN :data_inicial AND :data_final
+-- :name get-crime-reports-with-geo :? :*
+-- :doc retrieves crimes for geolocalization (lat and lng not null)
+SELECT * FROM crime_reports
+  WHERE created_at BETWEEN :data_inicial AND :data_final
   AND latitude is NOT NULL
-/*~ ; :natureza_id
+/*~ ; :crime_id
 (cond
-  (number? (:natureza_id params)) "AND natureza_id = :natureza_id"
-  (coll? (:natureza_id params)) "AND natureza_id IN :tuple:natureza_id"
+  (number? (:crime_id params)) "AND crime_id = :crime_id"
+  (coll? (:crime_id params)) "AND crime_id IN :tuple:crime_id"
   :else nil)
 ~*/
---~ (when (:bairro params) "AND bairro LIKE :bairro")
---~ (when (:via params) "AND via LIKE :via")
+--~ (when (:neighborhood params) "AND neighborhood LIKE :neighborhood")
+--~ (when (:route params) "AND route LIKE :route")
 /*~ ; :hora_inicial :hora_final
 (when (and (:hora_inicial params) (:hora_final params))
-  "AND hora BETWEEN :hora_inicial AND :hora_final")
+  "AND created_on BETWEEN :hora_inicial AND :hora_final")
 ~*/
 
--- REPORT ----------------------------------------------------------
+-- -------------------------------------------------------------------
+-- CRIME REPORTS
+-- -------------------------------------------------------------------
 
 
--- :name get-reports :? :*
--- :doc fetches reports with usual filtering of fields
-SELECT * FROM ocorrencia AS o
-  INNER JOIN natureza AS n
-  ON o.natureza_id = n.id
-  WHERE o.data BETWEEN :data-inicial AND :data-final
---~ (when (:bairro params) "AND o.bairro LIKE :bairro")
+-- :name get-crime-reports :? :*
+-- :doc fetches crime reports with usual filtering of fields
+SELECT * FROM crime_reports AS cr
+  INNER JOIN crimes AS c
+  ON cr.crime_id = c.id
+  WHERE cr.created_at BETWEEN :data-inicial AND :data-final
+--~ (when (:neighborhood params) "AND cr.neighborhood LIKE :neighborhood")
 
--- :name get-reports-raw :? :*
--- :doc fetches reports with no filtering
-SELECT * FROM ocorrencia AS o
-  INNER JOIN natureza AS n
-  ON o.natureza_id = n.id
+-- :name get-crime-reports-raw :? :*
+-- :doc fetches crime-reports with no filtering
+SELECT * FROM crime_reports AS cr
+  INNER JOIN crimes AS c
+  ON cr.crime_id = c.id
 
--- :name get-reports-count-raw :? :*
---:doc fetch reports count with no filtering
-SELECT COUNT(*) FROM ocorrencia
+-- :name get-crime-reports-count-raw :? :*
+--:doc fetch crime-reports count with no filtering
+SELECT COUNT(*) FROM crime_reports
 
--- :name get-reports-count-by-offense-raw :? :*
-SELECT n.nome, COUNT(*) FROM ocorrencia AS o
-  INNER JOIN natureza AS n
-  ON o.natureza_id = n.id
-  GROUP BY n.nome ORDER BY n.nome DESC
+-- :name get-crime-reports-count-by-crime-raw :? :*
+SELECT c.type, COUNT(*) FROM crime_reports AS cr
+  INNER JOIN crimes AS c
+  ON cr.crime_id = c.id
+  GROUP BY c.type ORDER BY c.type DESC
 
--- :name get-reports-count :? :*
---:doc fetch reports count with usual filtering
-SELECT COUNT(*) FROM ocorrencia AS o
-  WHERE o.data BETWEEN :data-inicial AND :data-final
---~ (when (:bairro params) "AND o.bairro LIKE :bairro")
+-- :name get-crime-reports-count :? :*
+--:doc fetch crime-reports count with usual filtering
+SELECT COUNT(*) FROM crime_reports AS cr
+  WHERE cr.created_at BETWEEN :data-inicial AND :data-final
+--~ (when (:neighborhood params) "AND cr.neighborhood LIKE :neighborhood")
 
--- :name get-reports-count-by-offense :? :*
-SELECT n.nome, COUNT(*) FROM ocorrencia AS o
-  INNER JOIN natureza AS n
-  ON o.natureza_id = n.id
-  WHERE o.data BETWEEN :data-inicial AND :data-final
-  AND o.natureza_id IN :tuple:natureza-id
---~ (when (:bairro params) "AND o.bairro LIKE :bairro")
-  GROUP BY n.nome ORDER BY n.nome DESC
+-- :name get-crime-reports-count-by-crime
+SELECT c.type, COUNT(*) FROM crime_reports AS cr
+  INNER JOIN crimes AS c
+  ON cr.crime_id = c.id
+  WHERE cr.created_at BETWEEN :data-inicial AND :data-final
+  AND cr.crime_id IN :tuple:crimes-id
+--~ (when (:neighborhood params) "AND cr.neighborhood LIKE :neighborhood")
+  GROUP BY c.type ORDER BY c.type DESC

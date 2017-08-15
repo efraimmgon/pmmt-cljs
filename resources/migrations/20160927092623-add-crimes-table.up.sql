@@ -1,0 +1,5 @@
+-- 20160927092623
+CREATE TABLE crimes (
+  id serial PRIMARY KEY,
+  type TEXT NULL
+);

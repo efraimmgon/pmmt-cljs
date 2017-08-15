@@ -34,10 +34,10 @@
 ; core ----------------------------------------------------------------
 
 (defn compare-incidents [params-a params-b]
-  (let [get-reports-count-by-offense
+  (let [get-crime-reports-count-by-crime
         (fn [params]
           ; return a coll with the :nome and :count
-          (db/get-reports-count-by-offense
+          (db/get-crime-reports-count-by-crime
            ; we care only for a select set of incidents, not all
            (assoc params :natureza-id (map :id (c/NATUREZAS-SELECTED)))))]
     (map (fn [a b]
@@ -45,8 +45,8 @@
             :a (:count a)
             :b (:count b)
             :fluctuation (c/fluctuation (:count a) (:count b))})
-         (get-reports-count-by-offense params-a)
-         (get-reports-count-by-offense params-b))))
+         (get-crime-reports-count-by-crime params-a)
+         (get-crime-reports-count-by-crime params-b))))
 
 (defn select-distinct
   "Takes a collection of maps, a function to retrieve a value from the map
@@ -89,7 +89,7 @@
     :locais (select-distinct (remove #(or (empty? (:via %)) (empty? (:bairro %))) coll)
                              #(str (:bairro %) ", " (:via %)))
     :dias-da-semana  (select-distinct-weekdays coll)))
-    ;; TODO: there is no longer a column named `periodo` in `ocorrencia`
+    ;; TODO: there is no longer a column named `periodo` in `crime-reports`
     ;:periodos (select-distinct (remove #(empty? (:periodo %)) coll) :periodo)))
 
 (defn format-plot-bar-data [name title-x coll]
@@ -175,8 +175,8 @@
                   :data-final data-final-a}
         params-b {:data-inicial data-inicial-b
                   :data-final data-final-b}
-        [count-a count-b] (map #(first (db/get-reports-count %)) [params-a params-b])
-        [period-a period-b] (map db/get-reports [params-a params-b])
+        [count-a count-b] (map #(first (db/get-crime-reports-count %)) [params-a params-b])
+        [period-a period-b] (map db/get-crime-reports [params-a params-b])
         [distinct-fields-a distinct-fields-b]
         (map select-distinct-fields [period-a period-b])
         ; plots

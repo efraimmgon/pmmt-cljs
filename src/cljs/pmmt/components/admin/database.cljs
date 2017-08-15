@@ -15,7 +15,7 @@
          :active-panel :database}))
 
 (def tables
-  ["cidade" "natureza" "ocorrencia" "tag" "document"])
+  ["cidade" "natureza" "crime_reports" "tag" "document"])
 
 ; misc ------------------------------------------------------------
 

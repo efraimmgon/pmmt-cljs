@@ -1,5 +1,0 @@
--- 20160927092623
-CREATE TABLE natureza (
-  id serial PRIMARY KEY,
-  nome VARCHAR(200) UNIQUE NOT NULL
-);

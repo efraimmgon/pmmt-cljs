@@ -40,7 +40,7 @@
              :database {:setup-ready? false
                         :active-panel :database
                         ;; TODO: move to config file
-                        :tables ["cidade", "natureza", "ocorrencia", "tag", "document"]}}}
+                        :tables ["cidade", "natureza", "crime_reports", "tag", "document"]}}}
     db)))
 
 (reg-event-fx

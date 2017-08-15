@@ -54,14 +54,14 @@
                 (str (name k) ": " v)])
              (seq @query-params)))])))
 
-(defn display-ocorrencias-count []
-  (let [ocorrencias-count (subscribe [:get-db :ocorrencias-count])
-        total (:total @ocorrencias-count)
-        roubo (:roubo @ocorrencias-count)
-        furto (:furto @ocorrencias-count)
-        droga (:droga @ocorrencias-count)
-        homicidio (:homicidio @ocorrencias-count)
-        outros (:outros @ocorrencias-count)]
+(defn display-crime-reports-count []
+  (let [crime-reports-count (subscribe [:get-db :crime-reports-count])
+        total (:total @crime-reports-count)
+        roubo (:roubo @crime-reports-count)
+        furto (:furto @crime-reports-count)
+        droga (:droga @crime-reports-count)
+        homicidio (:homicidio @crime-reports-count)
+        outros (:outros @crime-reports-count)]
     (into [:div]
           (map (fn [len text]
                  (when (pos? len)
@@ -80,15 +80,15 @@
   (let [sorted-content (subscribe [:sorted-content])]
     (fn []
       (into [:tbody]
-        (map (fn [ocorrencia class]
-               ^{:key ocorrencia}
+        (map (fn [crime-report class]
+               ^{:key crime-report}
                [:tr {:class class}
-                [:td (:natureza ocorrencia)]
-                [:td (:bairro ocorrencia)]
-                [:td (:via ocorrencia)]
-                [:td (:data ocorrencia)]
-                [:td (:weekday ocorrencia)]
-                [:td (:hora ocorrencia)]])
+                [:td (:crime crime-report)]
+                [:td (:neighborhood crime-report)]
+                [:td (:route crime-report)]
+                [:td (:created_at crime-report)]
+                [:td (:weekday crime-report)]
+                [:td (:created_on crime-report)]])
              @sorted-content
              (cycle ["odd" "even"]))))))
 
@@ -96,7 +96,7 @@
   [:div
     [display-query-params]
     [:h3 "Ocorrências registradas"]
-    [display-ocorrencias-count]
+    [display-crime-reports-count]
     [:table.sortable
      [:thead>tr
       [:th {:on-click #(dispatch [:update-sort-engine {:key :natureza}])}
