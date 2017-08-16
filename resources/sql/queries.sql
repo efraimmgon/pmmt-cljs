@@ -7,17 +7,23 @@
 -- :name delete-all-crimes! :! :n
 DELETE FROM crimes
 
--- :name delete-all-crime-reports
+-- :name delete-all-crime-reports! !: :n
 DELETE FROM crime_reports
 
 -- :name delete-all-users! :! :n
 DELETE FROM users
 
--- :name select-by-field
+-- :name delete-all-modes-desc! :! :n
+DELETE FROM modes_desc
+
+-- :name delete-all-cities! :! :n
+DELETE FROM cities
+
+-- :name select-by-field :? :*
 SELECT * FROM :i:table
   WHERE :i:field = :value
 
--- :name select-by-table
+-- :name select-by-table :? :*
 SELECT * FROM :i:table LIMIT 100
 
 -- -------------------------------------------------------------------
@@ -50,7 +56,7 @@ DELETE FROM users
 WHERE id = :id
 
 -- -------------------------------------------------------------------
--- NATUREZA
+-- CRIMES
 -- -------------------------------------------------------------------
 
 -- :name get-crimes :? :*
@@ -69,7 +75,7 @@ INSERT INTO crimes (id, type) VALUES (:id, :type)
 -- CRIME REPORTS
 -- -------------------------------------------------------------------
 
--- :name create-crime-report!
+-- :name create-crime-report! :! :n
 -- create a `crime-report` record
 INSERT INTO crime_reports
 (report_id, report, crime_id, mode_desc_id, city_id, neighborhood,
@@ -82,3 +88,25 @@ VALUES
 -- fetch `crime-reports` records with `latitude` and `longitude` = null
 SELECT * FROM crime_reports
  WHERE latitude = NULL AND longitude = NULL
+
+ -- -------------------------------------------------------------------
+ -- MODES DESC
+ -- -------------------------------------------------------------------
+
+-- :name get-modes-desc :? :*
+SELECT * FROM modes_desc
+
+-- :name create-mode-desc! :! :n
+INSERT INTO modes_desc
+  (type) VALUES (:type)
+
+-- -------------------------------------------------------------------
+-- CITIES
+-- -------------------------------------------------------------------
+
+-- :name get-cities :? :*
+SELECT * FROM cities
+
+-- :name create-city! :! :n
+INSERT INTO cities
+  (name) VALUES (:name)

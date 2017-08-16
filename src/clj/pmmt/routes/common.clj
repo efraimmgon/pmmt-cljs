@@ -5,7 +5,9 @@
             [clojure.string :refer [lower-case includes?]]
             [pmmt.db.core :as db]))
 
-;;; Date
+; -------------------------------------------------------------------------
+; Date Helpers
+; -------------------------------------------------------------------------
 
 (def date-format (tf/formatter "dd/MM/yyyy"))
 
@@ -68,7 +70,9 @@
       first
       WEEKDAYS))
 
-;;; Time
+; -------------------------------------------------------------------------
+; Time Helpers
+; -------------------------------------------------------------------------
 
 (def time-format (tf/formatter "HH:mm"))
 
@@ -111,60 +115,81 @@
       (calculate b a))))
 
 
-;;; Global vars
-;;; Defined as functions, since we can't access the db at compile time.
+; -------------------------------------------------------------------------
+; Global vars
+; -------------------------------------------------------------------------
+; NOTE: Defined as functions, since we can't access the db at compile time.
 
-(def NATUREZAS-ALL
-  (memoize #(db/get-naturezas)))
+(def CRIMES-ALL
+  (memoize #(db/get-crimes)))
 
-(def NATUREZAS-ID-ALL
+(def CRIMES-MAP-ALL
   (memoize
    #(reduce (fn [acc n]
-              (assoc acc (:id n) (:nome n)))
-            {} (NATUREZAS-ALL))))
+              (assoc acc (:id n) (:type n)))
+            {} (CRIMES-ALL))))
 
-(def CRIMES-AND-IDS
+(def CRIMES-REVERSE-MAP
   (memoize
    (fn []
      (into {}
-           (map (juxt :nome :id) (db/get-naturezas))))))
+           (map (juxt :type :id) (db/get-crimes))))))
+
+(def MODES-DESC-REVERSE-MAP
+  (memoize
+   (fn []
+     (into {}
+           (map (juxt :type :id) (db/get-modes-desc))))))
+
+(def CITIES-REVERSE-MAP
+  (memoize
+   (fn []
+     (into {}
+           (map (juxt :name :id) (db/get-cities))))))
 
 
 (def ROUBO
   (memoize
    (fn []
-     (filter #(includes? (:nome %) "Roubo")
-              (NATUREZAS-ALL)))))
+     (filter #(includes? (:type %) "Roubo")
+              (CRIMES-ALL)))))
 
 (def FURTO
   (memoize
    (fn []
-     (filter #(includes? (:nome %) "Furto")
-              (NATUREZAS-ALL)))))
+     (filter #(includes? (:type %) "Furto")
+              (CRIMES-ALL)))))
 
 (def HOMICIDIO
   (memoize
    (fn []
-     (filter #(includes? (:nome %) (NFKD "Homicídio"))
-              (NATUREZAS-ALL)))))
+     (filter #(includes? (:type %) (NFKD "Homicídio"))
+              (CRIMES-ALL)))))
 
 (def TRAFICO
   (memoize
    (fn []
-     (filter #(includes? (:nome %) (NFKD "Tráfico"))
-              (NATUREZAS-ALL)))))
+     (filter #(includes? (:type %) (NFKD "Tráfico"))
+              (CRIMES-ALL)))))
 
 (def DROGAS
   (memoize
    (fn []
-     (filter #(includes? (:nome %) "Drogas")
-              (NATUREZAS-ALL)))))
+     (filter #(includes? (:type %) "Drogas")
+              (CRIMES-ALL)))))
 
-(defn NATUREZAS-SELECTED []
+(defn CRIMES-SELECTED []
   (concat (ROUBO) (FURTO) (HOMICIDIO) (TRAFICO)))
 
 
-(defn NATUREZAS-ID-SELECTED []
+(defn CRIMES-MAP-SELECTED []
   (reduce (fn [acc n]
-             (assoc acc (:id n) (:nome n)))
-          {} (NATUREZAS-SELECTED)))
+             (assoc acc (:id n) (:type n)))
+          {} (CRIMES-SELECTED)))
+
+; -------------------------------------------------------------------------
+; Misc
+; -------------------------------------------------------------------------
+
+(defn project-root []
+  (System/getProperty "user.dir"))

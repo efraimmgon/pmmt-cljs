@@ -39,7 +39,7 @@
           ; return a coll with the :nome and :count
           (db/get-crime-reports-count-by-crime
            ; we care only for a select set of incidents, not all
-           (assoc params :natureza-id (map :id (c/NATUREZAS-SELECTED)))))]
+           (assoc params :natureza-id (map :id (c/CRIMES-SELECTED)))))]
     (map (fn [a b]
            {:natureza (:nome a)
             :a (:count a)

@@ -2,6 +2,7 @@
   (:require
    [clojure.data.csv :as csv]
    [clojure.java.io :as io]
+   [pmmt.routes.common :as c]
    [pmmt.routes.services.upload :as upload]))
 
 ; ------------------------------------------------------------------------
@@ -11,6 +12,7 @@
   ;; http://www.matt-reid.co.uk/blog_post.php?id=69
   (let [normalized (java.text.Normalizer/normalize s java.text.Normalizer$Form/NFD)]
     (clojure.string/replace normalized #"\p{InCombiningDiacriticalMarks}+" "")))
+
 
 (defn words [text]
   (re-seq #"[A-ZÇÂÃÁÉÊÍÓÔÕÚ\.]+" (.toUpperCase text)))
@@ -76,13 +78,8 @@
 
 ; Files ------------------------------------------------------------------
 
-(def project-root (System/getProperty "user.dir"))
-
-(def db-resources-path
-  (io/file project-root "resources" "db" "sanitized"))
-
 (def neighborhoods-file
-  (-> project-root
+  (-> (c/project-root)
       (io/file  "resources" "db" "sanitized" "bairros-sinop.csv")
       .getPath))
 

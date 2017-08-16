@@ -13,11 +13,11 @@
         str-to-date (fn [s] (and s (c/str->java-date s)))
         str-to-time (fn [s] (and s (c/str->java-time s)))
         db-params (-> params
-                      (update :natureza_id clojure.edn/read-string)
+                      (update :crime_id clojure.edn/read-string)
                       (update :data_inicial str-to-date)
                       (update :data_final str-to-date)
-                      (update :bairro like-fn)
-                      (update :via like-fn)
+                      (update :neighborhood like-fn)
+                      (update :route like-fn)
                       (update :hora_inicial str-to-time)
                       (update :hora_final str-to-time))]
     db-params))
@@ -31,7 +31,7 @@
 (defn adjust-to-geo [row]
   (-> row
       ;; TODO: join the nat name in the db
-      (assoc :natureza (get (c/NATUREZAS-ID-ALL) (:natureza_id row)))))
+      (assoc :natureza (get (c/CRIMES-MAP-ALL) (:crime_id row)))))
 
 (defn get-geo-data [params]
   (let [rows (db/get-crime-reports-with-geo
