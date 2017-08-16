@@ -21,9 +21,9 @@
 (defn csv->map [csv-data]
   (let [[header & rows] csv-data]
     (map (fn [row]
-           (-> (zipmap header row)
-               (clojure.string/lower-case)
-               (clojure.string/replace #" " "-")
+           (-> (zipmap
+                (map (comp string/lower-case #(string/replace % #" " "-")) header)
+                row)
                (walk/keywordize-keys)))
          rows)))
 
