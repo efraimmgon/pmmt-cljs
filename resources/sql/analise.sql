@@ -1,4 +1,4 @@
--- :name get-naturezas :? :*
+-- :name get-crimes :? :*
 -- retrive all `crimes` records
 SELECT id, type FROM crimes
 

@@ -24,14 +24,14 @@
 
 ;;; core
 
-(defn get-naturezas []
+(defn get-crimes []
   (response/ok
-   (db/get-naturezas)))
+   (db/get-crimes)))
 
 (defn adjust-to-geo [row]
   (-> row
       ;; TODO: join the nat name in the db
-      (assoc :natureza (get (c/CRIMES-MAP-ALL) (:crime_id row)))))
+      (assoc :crime (get (c/CRIMES-MAP-ALL) (:crime_id row)))))
 
 (defn get-geo-data [params]
   (let [rows (db/get-crime-reports-with-geo

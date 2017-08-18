@@ -10,7 +10,7 @@
 
 (defn setup! []
   (when-not @(subscribe [:admin.database/setup-ready?])
-    (dispatch-sync [:query-naturezas])
+    (dispatch-sync [:query-crimes])
     (dispatch [:admin.database/setup-ready])))
 
 ; -------------------------------------------------------------------------
@@ -90,7 +90,7 @@
            [table-rows table]]])))))
 
 (defn update-db-info-text []
-  (let [naturezas (subscribe [:naturezas])]
+  (let [crimes (subscribe [:crimes])]
     (fn []
       [:div
        [:p.info
@@ -100,23 +100,29 @@
         "Selecione também a cidade de referência das ocorrências a serem inseridas."]
        [:p "Observações:"]
        [:ul
-        [:li "As colunas devem ter os seguintes cabeçalhos, sem nenhuma acentuação:"
+        [:li "As colunas devem ter os seguintes cabeçalhos, " [:strong "sem nenhuma acentuação:"]
          [:ol
-          [:li "NATUREZA"]
-          [:li "BAIRRO"]
-          [:li "VIA (rua, avenida, etc)"]
           [:li "NUMERO"]
-          [:li "HORA"]
-          [:li "DATA"]]]
+          [:li "NARRATIVA"]
+          [:li "NATUREZA"]
+          [:li "DESC FORMA"]
+          [:li "MUNICIPIO"]
+          [:li "BAIRRO"]
+          [:li "TIPO LOGRADOURO"]
+          [:li "LOGR NUMERO"]
+          [:li "LOGR COMPLEMENTO"]
+          [:li "DATA FATO"]
+          [:li "HORA MINUTO FATO"]]]
+
         [:li "Se a ocorrência não possuir data ou hora, os respectivos campos devem
              estar em branco."]
-        [:li "A hora deve estar no formato hh:mm:ss."]
-        [:li "A data deve estar no formato aaaa-mm-dd."]
+        [:li "A hora deve estar no formato " [:strong "hh:mm:ss "] "."]
+        [:li "A data deve estar no formato " [:strong "aaaa-mm-dd"] "."]
         [:li "As seguintes naturezas estão disponíveis para inserção:"
           [:ul
-           (for [n @naturezas]
-             ^{:key (:id n)}
-             [:li (:nome n)])]]]])))
+           (for [crime @crimes]
+             ^{:key (:id crime)}
+             [:li (:type crime)])]]]])))
 
 ; -------------------------------------------------------------------------
 ; Panels

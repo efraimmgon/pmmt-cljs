@@ -18,9 +18,6 @@
 (secretary/defroute "/utilitarios/" []
   (dispatch [:page :utilitarios]))
 
-(secretary/defroute "/biblioteca/" []
-  (dispatch [:page :biblioteca]))
-
 (secretary/defroute "/analise-criminal/relatorio/" []
   (dispatch [:page :relatorio]))
 

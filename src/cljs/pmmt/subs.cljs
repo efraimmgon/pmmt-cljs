@@ -26,7 +26,7 @@
 
 (reg-sub :cities query)
 
-(reg-sub :naturezas query)
+(reg-sub :crimes query)
 
 ; Geo --------------------------------------------------------------
 

@@ -1,53 +1,39 @@
 (ns pmmt.routes.services
-  (:require [ring.util.http-response :refer :all]
-            [clojure.tools.logging :as log]
-            [compojure.api.sweet :refer :all]
-            [compojure.api.upload :refer
-             [wrap-multipart-params TempFileUpload]]
-            [schema.core :as s]
-            [pmmt.routes.home :as home]
-            [pmmt.routes.report :as report]
-            [pmmt.routes.geo :as geo]
-            [pmmt.db.core :as db]
-            [pmmt.routes.admin :as admin]
-            [pmmt.routes.services.auth :as auth]
-            [pmmt.routes.services.upload :as upload]))
+  (:require
+   [ring.util.http-response :refer :all]
+   [clojure.tools.logging :as log]
+   [compojure.api.sweet :refer :all]
+   [compojure.api.upload :refer
+    [wrap-multipart-params TempFileUpload]]
+   [schema.core :as s]
+   [pmmt.routes.home :as home]
+   [pmmt.routes.report :as report]
+   [pmmt.routes.geo :as geo]
+   [pmmt.db.core :as db]
+   [pmmt.routes.admin :as admin]
+   [pmmt.routes.services.auth :as auth]
+   [pmmt.routes.services.upload :as upload]))
 
-; Misc -----------------------------------------------------------
+; ---------------------------------------------------------------------
+; Misc
+; ---------------------------------------------------------------------
 
 (s/defschema Result
              {:result s/Keyword
               (s/optional-key :message) String})
 
-; Biblioteca -----------------------------------------------------
-
-(s/defschema Tag
-             {:id s/Int
-              :name String
-              :description String})
-
-(s/defschema Document
-             {:id s/Int
-              :name String
-              :description String
-              :url String})
-
-(s/defschema TagDocuments
-             {:tag Tag
-              :docs [(assoc Document
-                            :tag_id s/Int
-                            :doc_id s/Int
-                            :id_2 s/Int)]})
-
 (s/defschema TimeDeltaParams
              {:date String
               :days String})
 
-; Geo ----------------------------------------------------------
+; ---------------------------------------------------------------------
+; Geo
+; ---------------------------------------------------------------------
+
 (s/defschema GeoRequest
              {; don't know how to coerce this here
               ; should be three options: number, coll, and string
-              :natureza_id s/Str
+              :crime_id s/Str
               :data_inicial s/Str
               :data_final s/Str
               (s/optional-key :bairro) s/Str
@@ -55,22 +41,24 @@
               (s/optional-key :hora_inicial) s/Str
               (s/optional-key :hora_final) s/Str})
 
-; Relatório -----------------------------------------------------
+; ---------------------------------------------------------------------
+; Report
+; ---------------------------------------------------------------------
 
 (s/defschema ReportRequest
              {:data-inicial-a s/Str
               :data-final-a s/Str
               :data-inicial-b s/Str
               :data-final-b s/Str
-              (s/optional-key :bairro) s/Str
-              ; `Naturezas`
+              (s/optional-key :neighborhood) s/Str
+              ; `Crimes`
               (s/optional-key :roubo) s/Bool
               (s/optional-key :furto) s/Bool
               (s/optional-key :trafico) s/Bool
               (s/optional-key :homicidio) s/Bool
               ; `Outros`
-              (s/optional-key :dias-da-semana) s/Bool
-              (s/optional-key :horarios) s/Bool})
+              (s/optional-key :weekday) s/Bool
+              (s/optional-key :times) s/Bool})
 
 (defapi service-routes
   {:swagger {:ui "/swagger-ui"
@@ -109,12 +97,12 @@
   (GET "/analise-criminal/geo/dados" []
        :summary "Handle a user request and return a map response"
        :query [georeq GeoRequest]
-       ; todo: `return`
+       ; TODO: `return`
        (geo/geo-dados georeq))
   (GET "/analise-criminal/relatorio/dados" []
        :summary "Handle a user request and return a map response"
        :query [reportreq ReportRequest]
-       ; todo: `return`
+       ; TODO: `return`
        (report/report-data reportreq)))
 
 (defapi restricted-service-routes

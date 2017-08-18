@@ -1,3 +1,4 @@
+var oms = function() {};
 (function(){/*
  OverlappingMarkerSpiderfier
 https://github.com/jawj/OverlappingMarkerSpiderfier

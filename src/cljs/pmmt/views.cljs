@@ -4,7 +4,6 @@
    [re-frame.core :as re-frame :refer [subscribe dispatch]]
    ;[pmmt.components.admin :as admin]
    [pmmt.pages.admin.core :as adm]
-   [pmmt.components.biblioteca :as b]
    [pmmt.pages.geoprocessing :as geo]
    [pmmt.components.login :as login]
    [pmmt.components.registration :as reg]
@@ -74,7 +73,6 @@
        [nav-link "#/" "Home" :home]
        [nav-link "#/analise-criminal/geo/" "Georreferenciamento" :geo]
        [nav-link "#/analise-criminal/relatorio/" "Relatório" :relatorio]
-       [nav-link "#/biblioteca/" "Biblioteca" :biblioteca]
        [nav-link "#/utilitarios/" "Utilitários" :utilitarios]]
       [user-menu]]]))
 
@@ -90,16 +88,12 @@
      [:p.lead
       [:a {:href "#/analise-criminal"} "Análise Criminal"]]
      [:p.lead
-      [:a {:href "#/utilitarios"} "Utilitários"]]
-     [:h2 "Referências e documentos"]
-     [:p.lead
-      [:a {:href "#/"} "Biblioteca"]]]))
+      [:a {:href "#/utilitarios"} "Utilitários"]]]))
 
 (def pages
   {:home #'home-page
    :admin #'adm/main-template
    :utilitarios #'u/main-page
-   :biblioteca #'b/biblioteca-page
    :relatorio #'report/main-page
    :geo #'geo/main-page})
 

@@ -41,9 +41,9 @@
 
 (defn display-query-params []
   (let [query-params (subscribe [:get-db :geo-query-params])]
-        ;; todo: user friendly cities and nats
+        ;; TODO: user friendly cities and nats
         ; cities (subscribe [:cities])
-        ; naturezas (subscribe [:naturezas])]
+        ; naturezas (subscribe [:crimes])]
     (fn []
       [:div
        [:h3 "Parâmetros"]
@@ -99,7 +99,7 @@
     [display-crime-reports-count]
     [:table.sortable
      [:thead>tr
-      [:th {:on-click #(dispatch [:update-sort-engine {:key :natureza}])}
+      [:th {:on-click #(dispatch [:update-sort-engine {:key :crime}])}
        "Natureza"]
       [:th {:on-click #(dispatch [:update-sort-engine {:key :bairro}])}
        "Bairro"]

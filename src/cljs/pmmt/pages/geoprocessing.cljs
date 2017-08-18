@@ -1,13 +1,15 @@
 (ns pmmt.pages.geoprocessing
-  (:require [clojure.string :refer [includes?]]
-            [reagent.core :as r :refer [atom]]
-            [re-frame.core :as re-frame :refer
-             [subscribe dispatch dispatch-sync]]
-            day8.re-frame.http-fx
-            [pmmt.components.common :as c]
-            [pmmt.components.map :as map]))
+  (:require
+   [clojure.string :as string]
+   [reagent.core :as r :refer [atom]]
+   [re-frame.core :as rf :refer
+    [subscribe dispatch dispatch-sync]]
+   [pmmt.components.common :as c]
+   [pmmt.components.map :as map]))
 
-; aux. html ---------------------------------------------------------------
+; ---------------------------------------------------------------------
+; Aux. HTML
+; ---------------------------------------------------------------------
 
 (defn help-text [display?]
   [:div.tab-content
@@ -45,32 +47,32 @@
 ; Options for geo-form-modal form
 ; ------------------------------------------------------------------------
 
-(defn naturezas->select-opts [options display]
+(defn crimes->select-options [display options]
   (if (> (count options) 1)
-    (reduce (fn [acc m]
-              (update acc :value conj (:id m)))
-            {:display display, :value []} options)
-    {:display display, :value (:id (first options))}))
+    {:key display :display display :value (mapv :id options)}
+    {:key display :display display :value options}))
 
-(defn get-incident [s]
-  (filter #(clojure.string/includes? (:nome %) (.normalize s "NFKD"))
-          @(subscribe [:naturezas])))
+(defn group-crimes-by [names crimes]
+  (map (fn [name]
+         [name (filter #(string/includes? (:type %) name) crimes)])
+       names))
 
-(defn extra-opts []
-  (let [names ["Homicídio" "Tráfico" "Drogas"]
-        rows (doall (map get-incident names))]
-    (->>
-     (map (fn [[opts display]]
-            (naturezas->select-opts opts display))
-          (map vector rows names))
-     (concat [{:value "todas" :display "Todas"}]))))
+(defn grouped-options [crimes]
+  (apply conj []
+         {:key "todas" :value "todas" :display "TODAS"}
+         (map (fn [[name options]]
+                (crimes->select-options name options))
+              (group-crimes-by ["HOMICIDIO" "TRAFICO" "DROGAS"]
+                               crimes))))
 
-(defn format-opts [options value-key display-key]
-  (into []
+(defn crime-form-opts [crimes]
+  (concat
+    (grouped-options crimes)
     (map (fn [m]
-           {:value (get m value-key)
-            :display (get m display-key)})
-         options)))
+           {:key (:id m)
+            :value (:id m)
+            :display (:type m)})
+         crimes)))
 
 ; options for settings-modal ---------------------------------------------
 
@@ -80,7 +82,9 @@
    {:display "Mapa de calor"
     :value :heatmap}])
 
-; Forms ------------------------------------------------------------------
+; ---------------------------------------------------------------------
+; Forms
+; ---------------------------------------------------------------------
 
 (defn settings-modal []
   (let [field (atom {})]
@@ -98,50 +102,48 @@
          "Cancelar"]]])))
 
 (def placeholder-values
-  {:natureza_id "todas"
-   :data_inicial "01/01/2015"
-   :data_final "31/01/2015"})
+  {:crime_id "todas"
+   :data_inicial "01/01/2017"
+   :data_final "31/01/2017"})
 
 (defn geo-form-modal []
   (let [;; placeholder-values while in dev
         fields (atom placeholder-values)
         errors (atom {})
-        cities (subscribe [:cities])
-        naturezas (subscribe [:naturezas])
-        ; group related incidents in `extra-opts`, so all their ids can be
-        ; selected at once
-        natureza-form-opts (concat (extra-opts) (format-opts @naturezas :id :nome))]
+        crime-form-opts (crime-form-opts @(subscribe [:crimes]))]
     (fn []
       [c/modal
-       [:div "Opções de seleção"]
+       [:div "Opções de Seleção"]
        [:div
         [:div.well.well-sm
          [:strong "* campo obrigatório"]]
         [:fieldset
          [:legend "Básicas"]
-         [c/select-form "Natureza" :natureza_id natureza-form-opts fields]
+         [c/select-form "Natureza" :crime_id crime-form-opts fields]
          [c/display-error errors :data_inicial]
          [c/text-input "Data inicial" :data_inicial "dd/mm/aaaa" fields]
          [c/display-error errors :data_final]
          [c/text-input "Data final" :data_final "dd/mm/aaaa" fields]]
         [:fieldset
          [:legend "Avançadas"]
-         [c/text-input "Bairro" :bairro "ex: Centro" fields true]
-         [c/text-input "Via" :via "ex: Avenida Central" fields true]
+         [c/text-input "Bairro" :neighborhood "ex: Centro" fields true]
+         [c/text-input "Via" :route "ex: Avenida Central" fields true]
          [c/display-error errors :hora_inicial]
          [c/text-input "Hora inicial" :hora_inicial "hh:mm" fields true]
          [c/display-error errors :hora_final]
          [c/text-input "Hora final" :hora_final "hh:mm" fields true]]]
        [:div
         [:button.btn.btn-primary
-         {:on-click #(do (dispatch [:reset-map-state])
-                         (dispatch [:query-geo-dados fields errors]))}
+         {:on-click #(dispatch [:query-geo-dados fields errors])}
+
          "Buscar"]
         [:button.btn.btn-danger
          {:on-click #(dispatch [:remove-modal])}
          "Cancelar"]]])))
 
-; Buttons -----------------------------------------------------------------
+; ---------------------------------------------------------------------
+; Buttons
+; ---------------------------------------------------------------------
 
 (defn settings-button []
    [:span
@@ -155,33 +157,33 @@
        {:on-click #(dispatch [:modal geo-form-modal])}
        "Opções de seleção"] " "])
 
-; main page ---------------------------------------------------------------
-(def scripts [{:src "https://maps.googleapis.com/maps/api/js?key=AIzaSyA7ekvGGHxVTwTVcpi073GOERnktqvmYz8&libraries=geometry,visualization"}
-              {:src "/js/styledMarkers.js"}
-              {:src "/js/oms.js"}])
+; ---------------------------------------------------------------------
+; Main Page
+; ---------------------------------------------------------------------
 
-(defonce setup-ready? (atom false))
+(def scripts
+  {#(exists? js/google) "https://maps.googleapis.com/maps/api/js?key=AIzaSyA7ekvGGHxVTwTVcpi073GOERnktqvmYz8&libraries=geometry,visualization"})
+   ;#(exists? js/StyledMarker) "/js/styledMarkers.js"
+   ;#(exists? js/oms) "/js/oms.js"})
 
 (defn main-page []
   (let [show-table? (subscribe [:show-table?])]
-    (dispatch-sync [:query-naturezas])
-    (when-not @setup-ready?
-      (doseq [script scripts]
-        (c/add-script! script))
-      (reset! setup-ready? true))
+    (dispatch-sync [:query-crimes])
     (fn []
-      [:div.container
-       [:div.page-header
-        [:h1 "Georreferenciamento "
-         [:small "de registros criminais"]]]
-       ;; gmap
-       (when @setup-ready?
-        [map/map-outer])
-       [:br]
-       [howto-panel]
-       [:br]
-       [:div
-        [settings-button]
-        [selection-options-button]]
-       (when @show-table?
-         [map/table])])))
+      [c/js-loader
+       {:scripts scripts
+        :loading [:div.loading "Loading..."]
+        :loaded [:div.container
+                 [:div.page-header
+                  [:h1 "Georreferenciamento "
+                   [:small "de registros criminais"]]]
+                 ;; gmap
+                 [map/map-outer]
+                 [:br]
+                 [howto-panel]
+                 [:br]
+                 [:div
+                  [settings-button]
+                  [selection-options-button]]
+                 (when @show-table?
+                   [map/table])]}])))

@@ -29,19 +29,20 @@
         (update :furto #(when % (map :id (c/FURTO))))
         (update :trafico #(when % (map :id (c/TRAFICO))))
         (update :homicidio #(when % (map :id (c/HOMICIDIO))))
-        (update :bairro like-fn))))
+        (update :neighborhood like-fn))))
 
 ; core ----------------------------------------------------------------
 
 (defn compare-incidents [params-a params-b]
   (let [get-crime-reports-count-by-crime
         (fn [params]
-          ; return a coll with the :nome and :count
+          ; return a coll with the :type and :count
           (db/get-crime-reports-count-by-crime
            ; we care only for a select set of incidents, not all
-           (assoc params :natureza-id (map :id (c/CRIMES-SELECTED)))))]
+           (assoc params :crimes-id (c/CRIMES-SELECTED-IDS))))]
+
     (map (fn [a b]
-           {:natureza (:nome a)
+           {:crime (:type a)
             :a (:count a)
             :b (:count b)
             :fluctuation (c/fluctuation (:count a) (:count b))})
@@ -77,17 +78,17 @@
                      "Sexta" 0, "Sábado" 0, "Domingo" 0)
           ; there's no limit on the selection, as we want to get all the
           ; distinct dates, which will likely be many
-          (select-distinct coll :data nil)))
+          (select-distinct coll :created_at nil)))
 
 (defn select-distinct-fields
   [coll]
   ;; we need an orderd map, since we'll call `keys` and `vals` later on
   (array-map
-    :naturezas (select-distinct coll :nome)
-    :bairros (select-distinct (remove #(empty? (:bairro %)) coll) :bairro)
-    :vias (select-distinct (remove #(empty? (:via %)) coll) :via)
-    :locais (select-distinct (remove #(or (empty? (:via %)) (empty? (:bairro %))) coll)
-                             #(str (:bairro %) ", " (:via %)))
+    :crimes (select-distinct coll :type)
+    :bairros (select-distinct (remove #(empty? (:neighborhood %)) coll) :neighborhood)
+    :vias (select-distinct (remove #(empty? (:route %)) coll) :route)
+    :locais (select-distinct (remove #(or (empty? (:route %)) (empty? (:neighborhood %))) coll)
+                             #(str (:neighborhood %) ", " (:route %)))
     :dias-da-semana  (select-distinct-weekdays coll)))
     ;; TODO: there is no longer a column named `periodo` in `crime-reports`
     ;:periodos (select-distinct (remove #(empty? (:periodo %)) coll) :periodo)))
@@ -103,12 +104,12 @@
 (defn process-incidents [queryset-a queryset-b incidents-ids]
   (when (not-empty incidents-ids)
     (for [[incident-key ids] incidents-ids]
-      (let [filter-fn (fn [qs] (filter (fn [r] (in? ids (:natureza_id r))) qs))
+      (let [filter-fn (fn [qs] (filter (fn [r] (in? ids (:crime_id r))) qs))
             [qs-a qs-b] (map filter-fn [queryset-a queryset-b])
             [distinct-fields-a distinct-fields-b] (map select-distinct-fields [qs-a qs-b])]
         ; not interested in this value
-        {incident-key {:a (dissoc distinct-fields-a :naturezas)
-                       :b (dissoc distinct-fields-b :naturezas)}}))))
+        {incident-key {:a (dissoc distinct-fields-a :crimes)
+                       :b (dissoc distinct-fields-b :crimes)}}))))
 
 (defn process-time-periods [queryset-a queryset-b time-periods?]
   (when time-periods?
@@ -125,7 +126,7 @@
     ; see if we can derive a generic function for all optionals, and because
     ; the return value is concated with the other optionals
     (for [[neighborhood-key like-name] bairro]
-      (let [filter-fn (fn [qs] (filter (fn [r] (string/includes? (string/lower-case (:bairro r))
+      (let [filter-fn (fn [qs] (filter (fn [r] (string/includes? (string/lower-case (:neighborhood r))
                                                                  ; since we're filtering the coll and not doing a new query
                                                                  ; we're not interested in the wildcard chars
                                                                  (string/lower-case (string/replace like-name #"%" ""))))
@@ -142,7 +143,7 @@
   Return an array-map with the weekdays as keys and a vector of reports as vals."
   [queryset]
   (reduce (fn [acc row]
-            (let [weekday (c/long->weekday-str (:data row))]
+            (let [weekday (c/long->weekday-str (:created_at row))]
               (update acc weekday conj row)))
           ; we need to provide an array-map, as we want the weekdays
           ; to stick to the following order
@@ -183,7 +184,7 @@
         [pie-a pie-b]
         (map format-plot-pie-data
              ["naturezas a" "naturezas b"]
-             (map :naturezas [distinct-fields-a distinct-fields-b]))
+             (map :crimes [distinct-fields-a distinct-fields-b]))
         ; if those keys are not chosen their value is nil
         optionals-incidents
         (process-incidents period-a period-b
@@ -195,15 +196,15 @@
                               (remove #(nil? (second %))
                                       (select-keys params [:bairro])))
         optionals-weekdays
-        (process-weekdays period-a period-b (:dias-da-semana params))
+        (process-weekdays period-a period-b (:weekday params))
         optionals-horarios
-        (process-time-periods period-a period-b (:horarios params))]
+        (process-time-periods period-a period-b (:times params))]
 
     ;; result map
     {:total {:a (:count count-a)
              :b (:count count-b)
              :fluctuation (c/fluctuation (:count count-a) (:count count-b))}
-     :natureza-comparison (compare-incidents params-a params-b)
+     :crime-comparison (compare-incidents params-a params-b)
      :plots {:bar {:ids (keys distinct-fields-a)
                    :vals {:a (map format-plot-bar-data
                                (repeat "Período A")

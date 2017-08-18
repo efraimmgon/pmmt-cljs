@@ -117,10 +117,10 @@
 ; Main components -------------------------------------------------------
 
 ;; todo: report on page - not modal
-(def default-values {:data-inicial-a "01/01/2015"
-                     :data-final-a "31/05/2015"
-                     :data-inicial-b "01/06/2015"
-                     :data-final-b "31/12/2015"})
+(def default-values {:data-inicial-a "01/01/2017"
+                     :data-final-a "31/05/2017"
+                     :data-inicial-b "01/06/2017"
+                     :data-final-b "31/12/2017"})
 
 (defn report-form []
   (let [fields (atom default-values)
@@ -163,13 +163,13 @@
             "Bairro"]
            [:div.col-md-10
             ; TODO: text-select input
-            [c/text-input nil :bairro "ex: Centro" fields true]]]
+            [c/text-input nil :neighborhood "ex: Centro" fields true]]]
           [:div.form-group
            [:label {:class "col-md-2 control-label"}
             "Outros"]
            [:div.col-md-10
-            [c/checkbox-input "Dias da semana" :dias-da-semana true fields true]
-            [c/checkbox-input "Horários" :horarios true fields true]]]]]]
+            [c/checkbox-input "Dias da semana" :weekday true fields true]
+            [c/checkbox-input "Horários" :times true fields true]]]]]]
        [:div
         [:button.btn.btn-primary
          {:on-click #(dispatch [:query-report fields errors])}
@@ -241,8 +241,8 @@
          [panel-with-table
           "Variação de registros por natureza"
           {:headers (list "Natureza" "Período A" "Período B" "Variação")
-           :rows (get-in @result [:natureza-comparison])
-           :keyz (keys (first (get-in @result [:natureza-comparison])))}]
+           :rows (get-in @result [:crime-comparison])
+           :keyz (keys (first (get-in @result [:crime-comparison])))}]
          [plot-comparison]
          (when (:optionals @result)
            [optionals-result-panels])]))))
@@ -253,21 +253,20 @@
       {:on-click #(dispatch [:modal report-form])}
       "Gerar novo relatório"] " "])
 
-(defonce setup-ready?
-  (atom false))
+; ---------------------------------------------------------------------
+; Main Page
+; ---------------------------------------------------------------------
 
 (defn main-page []
-  ;; available crimes
-  (dispatch-sync [:query-naturezas])
-  ;; load `Plotly` for graphs
-  (when-not @setup-ready?
-    (c/add-script! {:src "https://cdn.plot.ly/plotly-latest.min.js"})
-    (reset! setup-ready? true))
+  (dispatch-sync [:query-crimes])
   (fn []
-    [:div.container
-     [:div.page-header
-      [:h1 "Relatório "
-       [:small "de registros criminais"]]]
-     [:div
-      [report-button] [:hr]]
-     [result-panel]]))
+    [c/js-loader
+     {:scripts {#(exists? js/Plotly) "https://cdn.plot.ly/plotly-latest.min.js"}
+      :loading [:div.loading "Loading..."]
+      :loaded [:div.container
+               [:div.page-header
+                [:h1 "Relatório "
+                 [:small "de registros criminais"]]]
+               [:div
+                [report-button] [:hr]]
+               [result-panel]]}]))

@@ -40,15 +40,15 @@
              :database {:setup-ready? false
                         :active-panel :database
                         ;; TODO: move to config file
-                        :tables ["cidade", "natureza", "crime_reports", "tag", "document"]}}}
+                        :tables ["cities", "crimes", "crime_reports", "modes_desc"]}}}
     db)))
 
 (reg-event-fx
- :query-naturezas
+ :query-crimes
  (fn [{:keys [db]} _]
    {:http-xhrio {:method :get
-                 :uri "/db/natureza"
-                 :on-success [:assoc-db :naturezas]
+                 :uri "/db/crimes"
+                 :on-success [:assoc-db :crimes]
                  :response-format (ajax/json-response-format {:keywords? true})}
     :db db}))
 

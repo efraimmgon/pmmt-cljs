@@ -2,7 +2,7 @@
   (:require [clj-time.core :as t]
             [clj-time.coerce :as tc]
             [clj-time.format :as tf]
-            [clojure.string :refer [lower-case includes?]]
+            [clojure.string :refer [lower-case includes?] :as string]
             [pmmt.db.core :as db]))
 
 ; -------------------------------------------------------------------------
@@ -151,35 +151,38 @@
 (def ROUBO
   (memoize
    (fn []
-     (filter #(includes? (:type %) "Roubo")
+     (filter #(string/includes? (:type %) "ROUBO")
               (CRIMES-ALL)))))
 
 (def FURTO
   (memoize
    (fn []
-     (filter #(includes? (:type %) "Furto")
+     (filter #(string/includes? (:type %) "FURTO")
               (CRIMES-ALL)))))
 
 (def HOMICIDIO
   (memoize
    (fn []
-     (filter #(includes? (:type %) (NFKD "Homicídio"))
+     (filter #(string/includes? (:type %) (NFKD "HOMICIDIO"))
               (CRIMES-ALL)))))
 
 (def TRAFICO
   (memoize
    (fn []
-     (filter #(includes? (:type %) (NFKD "Tráfico"))
+     (filter #(string/includes? (:type %) (NFKD "TRAFICO"))
               (CRIMES-ALL)))))
 
 (def DROGAS
   (memoize
    (fn []
-     (filter #(includes? (:type %) "Drogas")
+     (filter #(string/includes? (:type %) "DROGAS")
               (CRIMES-ALL)))))
 
 (defn CRIMES-SELECTED []
   (concat (ROUBO) (FURTO) (HOMICIDIO) (TRAFICO)))
+
+(defn CRIMES-SELECTED-IDS []
+  (map :id (CRIMES-SELECTED)))
 
 
 (defn CRIMES-MAP-SELECTED []

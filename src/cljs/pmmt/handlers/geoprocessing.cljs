@@ -58,7 +58,7 @@
    :crime-reports []
    ;; sortable table
    :show-table? false
-   :sort-key :natureza
+   :sort-key :crime
    :comp compare
    :ascending true})
 
@@ -103,7 +103,7 @@
      {:position {:lat (:latitude row),
                  :lng (:longitude row)}
       ;; Title: crime, id, address
-      :title (str "<b>"(:natureza row) " [" (:id row) "]</b><br/>"
+      :title (str "<b>"(:crime row) " [" (:id row) "]</b><br/>"
                   (string/join ", " (select-not-empty-keys row [:bairro :via :numero])))})))
 
 (defn create-heatmap-layer! [crime-reports]
@@ -148,7 +148,7 @@
  (fn [db [_ rows]]
    (let [updated-rows
          (map (fn [row]
-                (inc-crime-report! (:natureza row))
+                (inc-crime-report! (:crime row))
                 ; TODO: update fields with nil when blank
                 (-> row
                     (update :hora utils/long->time-str)

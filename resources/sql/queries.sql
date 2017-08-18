@@ -78,10 +78,10 @@ INSERT INTO crimes (id, type) VALUES (:id, :type)
 -- :name create-crime-report! :! :n
 -- create a `crime-report` record
 INSERT INTO crime_reports
-(report_id, report, crime_id, mode_desc_id, city_id, neighborhood,
+(report_number, report, crime_id, mode_desc_id, city_id, neighborhood,
  route_type, route, route_number, created_at, created_on)
 VALUES
-(:report_id, :report, :crime_id, :mode_desc_id, :city_id, :neighborhood,
+(:report_number, :report, :crime_id, :mode_desc_id, :city_id, :neighborhood,
  :route_type, :route, :route_number, :created_at, :created_on)
 
 -- :name crime-reports-with-null-coordinates :? :*
