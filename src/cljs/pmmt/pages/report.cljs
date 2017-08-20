@@ -4,6 +4,7 @@
   (:require
    [clojure.string :as string]
    [reagent.core :as r :refer [atom]]
+   [reagent-forms.core :refer [bind-fields]]
    [re-frame.core :as re-frame :refer
     [subscribe dispatch dispatch-sync]]
    [pmmt.components.common :as c]))
@@ -122,10 +123,145 @@
                      :data-inicial-b "01/06/2017"
                      :data-final-b "31/12/2017"})
 
+; (defn report-form []
+;   (let [fields (atom default-values)
+;         errors (atom {})
+;         cities (subscribe [:cities])]
+;     (fn []
+;       [c/modal
+;        [:div
+;         "Relatório de análise criminal"]
+;        [:div
+;         [:div.well.well-sm
+;          [:strong "* campo obrigatório"]]
+;         ;;; REQUIRED FIELDS
+;         [:fieldset
+;          [:legend "Período A"]
+;          [c/text-input "Data inicial" :data-inicial-a "dd/mm/aaaa" fields]
+;          [c/display-error errors :data-inicial-a]
+;          [c/text-input "Data final" :data-final-a "dd/mm/aaaa" fields]
+;          [c/display-error errors :data-final-a]]
+;         [:fieldset
+;          [:legend "Período B"]
+;          [c/text-input "Data inicial" :data-inicial-b "dd/mm/aaaa" fields]
+;          [c/display-error errors :data-inicial-b]
+;          [c/text-input "Data final" :data-final-b "dd/mm/aaaa" fields]
+;          [c/display-error errors :data-final-b]]
+;         ;;; OPTIONAL FIELDS
+;         [:fieldset
+;          [:legend "Filtros opcionais"]
+;          [:div.form-horizontal
+;           [:div.form-group
+;            [:label {:class "col-md-2 control-label"}
+;             "Naturezas"]
+;            [:div.col-md-10
+;             [c/checkbox-input "Roubo" :roubo true fields true]
+;             [c/checkbox-input "Furto" :furto true fields true]
+;             [c/checkbox-input "Tráfico" :trafico true fields true]
+;             [c/checkbox-input "Homicídio" :homicidio true fields true]]]
+;           [:div.form-group
+;            [:label {:class "col-md-2 control-label"}
+;             "Bairro"]
+;            [:div.col-md-10
+;             ; TODO: text-select input
+;             [c/text-input nil :neighborhood "ex: Centro" fields true]]]
+;           [:div.form-group
+;            [:label {:class "col-md-2 control-label"}
+;             "Outros"]
+;            [:div.col-md-10
+;             [c/checkbox-input "Dias da semana" :weekday true fields true]
+;             [c/checkbox-input "Horários" :times true fields true]]]]]]
+;        [:div
+;         [:button.btn.btn-primary
+;          {:on-click #(dispatch [:query-report fields errors])}
+;          "Gerar relatório"]
+;         [:button.btn.btn-danger
+;          {:on-click #(dispatch [:remove-modal])}
+;          "Cancelar"]]])))
+
+(defn periodo-template [legend id-start id-end]
+  [:fieldset
+   [:legend legend]
+   [:div
+    ; TODO: [c/display-error errors id-start]
+    [:div.form-group
+     [:label "Data inicial"]
+     [:div.input-group
+      [:div {:field :datepicker, :id id-start, :date-format "dd/mm/yyyy", :auto-close? true, :lang :pt-PT}]
+      [:span.input-group-addon "*"]]]
+    ; TODO: [c/display-error errors id-end]
+    [:div.form-group
+     [:label "Data final"]
+     [:div.input-group
+      [:div {:field :datepicker, :id id-end, :date-format "dd/mm/yyyy", :auto-close? true, :lang :pt-PT}]
+      [:span.input-group-addon "*"]]]]])
+
+(def crimes-filter-template
+  [:div.form-group
+   [:label {:class "col-md-2 control-label"}
+    "Naturezas"]
+   [:div.col-md-10
+    [:div.checkbox
+     [:label
+      [:input {:field :checkbox, :id :roubo}]
+      "Roubo"]]
+    [:div.checkbox
+     [:label
+      [:input {:field :checkbox, :id :furto}]
+      "Furto"]]
+    [:div.checkbox
+     [:label
+      [:input {:field :checkbox, :id :trafico}]
+      "Tráfico"]]
+    [:div.checkbox
+     [:label
+      [:input {:field :checkbox, :id :homicidio}]
+      "Homicídio"]]]])
+
+(def neighborhood-filter-template
+  [:div.form-group
+   [:label {:class "col-md-2 control-label"}
+    "Bairro"]
+   [:div.col-md-10
+    ; TODO: change to typehead
+    [:div.form-group
+     [:input.form-control
+      {:field :text, :id :neighborhood, :placeholder "ex: Setor Comercial"}]]]])
+
+(def misc-filter-template
+  [:div.form-group
+   [:label {:class "col-md-2 control-label"}
+    "Outros"]
+   [:div.col-md-10
+    [:div.checkbox
+     [:label
+      [:input {:field :checkbox, :id :weekday}]
+      "Dias da semana"]]
+    [:div.checkbox
+     [:label
+      [:input {:field :checkbox, :id :times}]
+      "Horários"]]]])
+
+(def report-form-template
+  [:div
+   ;;; REQUIRED FIELDS
+   (periodo-template "Período A" :data-inicial-a :data-final-a)
+   (periodo-template "Período B" :data-inicial-b :data-final-b)
+   ;;; OPTIONAL FIELDS
+   [:fieldset
+    [:legend "Filtros opcionais"]
+    [:div.form-horizontal
+     crimes-filter-template
+     neighborhood-filter-template
+     misc-filter-template]]])
+
 (defn report-form []
-  (let [fields (atom default-values)
-        errors (atom {})
-        cities (subscribe [:cities])]
+  (let [doc (atom {:data-inicial-a "01/01/2017"
+                   :data-final-a "31/05/2017"
+                   :data-inicial-b "01/06/2017"
+                   :data-final-b "31/12/2017"
+                   :neighborhood "What?"})
+        errors (atom {})]
     (fn []
       [c/modal
        [:div
@@ -133,46 +269,12 @@
        [:div
         [:div.well.well-sm
          [:strong "* campo obrigatório"]]
-        ;;; REQUIRED FIELDS
-        [:fieldset
-         [:legend "Período A"]
-         [c/text-input "Data inicial" :data-inicial-a "dd/mm/aaaa" fields]
-         [c/display-error errors :data-inicial-a]
-         [c/text-input "Data final" :data-final-a "dd/mm/aaaa" fields]
-         [c/display-error errors :data-final-a]]
-        [:fieldset
-         [:legend "Período B"]
-         [c/text-input "Data inicial" :data-inicial-b "dd/mm/aaaa" fields]
-         [c/display-error errors :data-inicial-b]
-         [c/text-input "Data final" :data-final-b "dd/mm/aaaa" fields]
-         [c/display-error errors :data-final-b]]
-        ;;; OPTIONAL FIELDS
-        [:fieldset
-         [:legend "Filtros opcionais"]
-         [:div.form-horizontal
-          [:div.form-group
-           [:label {:class "col-md-2 control-label"}
-            "Naturezas"]
-           [:div.col-md-10
-            [c/checkbox-input "Roubo" :roubo true fields true]
-            [c/checkbox-input "Furto" :furto true fields true]
-            [c/checkbox-input "Tráfico" :trafico true fields true]
-            [c/checkbox-input "Homicídio" :homicidio true fields true]]]
-          [:div.form-group
-           [:label {:class "col-md-2 control-label"}
-            "Bairro"]
-           [:div.col-md-10
-            ; TODO: text-select input
-            [c/text-input nil :neighborhood "ex: Centro" fields true]]]
-          [:div.form-group
-           [:label {:class "col-md-2 control-label"}
-            "Outros"]
-           [:div.col-md-10
-            [c/checkbox-input "Dias da semana" :weekday true fields true]
-            [c/checkbox-input "Horários" :times true fields true]]]]]]
+
+        [bind-fields report-form-template doc]]
+
        [:div
         [:button.btn.btn-primary
-         {:on-click #(dispatch [:query-report fields errors])}
+         {:on-click #(dispatch [:query-report doc errors])}
          "Gerar relatório"]
         [:button.btn.btn-danger
          {:on-click #(dispatch [:remove-modal])}

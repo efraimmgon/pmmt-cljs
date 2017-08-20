@@ -155,12 +155,11 @@
     :on-click #(dispatch [:admin.database/set-active-panel panel-id])}
    [:a.btn title]])
 
-(defn inner-navigation []
-  (r/with-let [active-panel (rf/subscribe [:admin.database/active-panel])]
-    [:ul.nav.nav-tabs
-     [nav-pill "Tabelas" :database active-panel]
-     [nav-pill "Inserir dados" :update-db active-panel]
-     [nav-pill "Sincronizar Banco de Dados" :synchronize active-panel]]))
+(defn inner-navigation [active-panel]
+  [:ul.nav.nav-tabs
+   [nav-pill "Tabelas" :database active-panel]
+   [nav-pill "Inserir dados" :update-db active-panel]
+   [nav-pill "Sincronizar Banco de Dados" :synchronize active-panel]])
 
 (def panels
   {:database database-panel
@@ -175,5 +174,5 @@
   (setup!)
   (r/with-let [active-panel (subscribe [:admin.database/active-panel])]
     [:div
-     [inner-navigation]
+     [inner-navigation active-panel]
      [(panels @active-panel)]]))

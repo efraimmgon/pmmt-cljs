@@ -15,14 +15,13 @@
        (assoc-in [:time-delta :days] (:days @fields))
        (assoc-in [:time-delta :end] response))))
 
-(defn calculate-delta [db [_ fields errors]]
-  (if-let [err (v/validate-util-date-calc @fields)]
-    (reset! errors err)
-    (ajax/GET "/calculate-delta"
-              {:params @fields
-               :handler #(dispatch [:time-delta-response fields %])
-               :error-handler #(log %)}))
-  db)
 (reg-event-db
  :calculate-delta
- calculate-delta)
+ (fn [db [_ fields errors]]
+   (if-let [err (v/validate-util-date-calc @fields)]
+     (reset! errors err)
+     (ajax/GET "/calculate-delta"
+               {:params @fields
+                :handler #(dispatch [:time-delta-response fields %])
+                :error-handler #(log %)}))
+   db))

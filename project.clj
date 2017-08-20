@@ -7,12 +7,14 @@
                  [buddy "1.1.0"]
                  [clj-time "0.12.0"]
                  [cljs-ajax "0.5.8"]
+                 [cljsjs/plotly "1.29.3-0"]
+                 [cljsjs/google-maps "3.18-1"]
+                 [cljsjs/jquery "3.2.1-0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [compojure "1.5.1"]
                  [conman "0.6.1"]
                  [cprop "0.1.9"]
                  [day8.re-frame/http-fx "0.1.2"]
-                 [jayq "2.5.4"]
                  [luminus-immutant "0.2.2"]
                  [luminus-nrepl "0.1.4"]
                  [luminus-migrations "0.2.7"]
@@ -33,6 +35,7 @@
                  [prismatic/dommy "1.1.0"]
                  [reagent-utils "0.2.0"]
                  [reagent "0.6.0"]
+                 [reagent-forms "0.5.29"]
                  [re-frame "0.8.0"]
                  [ring-middleware-format "0.7.0"]
                  [ring-webjars "0.1.1"]
@@ -75,9 +78,10 @@
                {:source-paths ["src/cljc" "src/cljs" "env/prod/cljs"]
                 :compiler
                 {:output-to "target/cljsbuild/public/js/app.js"
-                 :externs ["react/externs/react.js"]
+                 :externs ["react/externs/react.js", "resources/externs.js"]
                  :optimizations :advanced
-                 :pretty-print false
+                 :pretty-print true
+                 :pseudo-names true
                  :closure-warnings
                  {:externs-validation :off :non-standard-jsdoc :off}}}}}
 

@@ -80,7 +80,7 @@
 
      (seq addresses)
      (do (geocode (first addresses) query-limit?)
-         (recur (rest addresses) (udpate control :queries swap! inc)))
+         (run-geocode (rest addresses) (assoc control :queries (swap! (:queries control) inc))))
 
      (empty? addresses)
      (js/alert "Fini!"))))

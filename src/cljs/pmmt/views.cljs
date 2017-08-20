@@ -1,5 +1,7 @@
 (ns pmmt.views
   (:require
+   [cljsjs.plotly]
+   [cljsjs.jquery]
    [reagent.core :as r :refer [atom]]
    [re-frame.core :as re-frame :refer [subscribe dispatch]]
    ;[pmmt.components.admin :as admin]

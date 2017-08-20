@@ -2,7 +2,6 @@
   (:require [re-frame.core :refer
              [reg-event-db reg-event-fx reg-fx]]
             [ajax.core :as ajax]
-            [jayq.core :as jq]
             day8.re-frame.http-fx
             pmmt.handlers.admin
             pmmt.handlers.geoprocessing
@@ -62,25 +61,13 @@
  (fn [db _]
    (assoc db :modal nil)))
 
-; if (= page :admin) then hide #nav
-; else if sb-admin style on head, remove it
-
-(defn find-link [href]
-  (jq/$ (str "link[rel=stylesheet][href~='" href "']")))
-
-(defn remove-style! [page]
-  (when-not (= page :admin)
-    (if-let [$elt (seq (js->clj (find-link "/css/sb-admin.css")))]
-      (print "Found $elt! ->" $elt))))
-      ;(jq/remove (clj->js $elt)))))
-
 ; we need those hacks because the css from the admin breaks the other pages
 ; and the navbar from the other pages break admin.
 (reg-event-fx
  :page
  (fn [{:keys [db]} [_ page]]
    (when (= page :admin)
-     (jq/hide (jq/$ :#navbar)))
+     (-> (js/document.getElementById "navbar") .-style .-display (set! "none")))
    {:db (assoc db :page page)}))
 
 (reg-event-db
