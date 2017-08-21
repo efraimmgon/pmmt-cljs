@@ -44,6 +44,7 @@
                         mount/start-with-args
                         :started)]
     (log/info component "started"))
+  (migrations/migrate ["migrate"] (select-keys env [:database-url]))
   (.addShutdownHook (Runtime/getRuntime) (Thread. stop-app)))
 
 (defn -main [& args]
