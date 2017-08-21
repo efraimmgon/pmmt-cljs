@@ -105,7 +105,8 @@
                   :plugins      [[com.jakemccrary/lein-test-refresh "0.14.0"]
                                  [lein-doo "0.1.7"]
                                  [lein-figwheel "0.5.8"]
-                                 [org.clojure/clojurescript "1.9.229"]]
+                                 [org.clojure/clojurescript "1.9.229"]
+                                 [lein-heroku "0.5.3"]]
                   :cljsbuild
                   {:builds
                    {:app
