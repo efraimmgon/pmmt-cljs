@@ -51,8 +51,7 @@
     (some #{"migrate" "rollback"} args)
     (do
       (mount/start #'pmmt.config/env)
-      (migrations/migrate args (select-keys env [:database-url]))
+      (migrations/migrate args (select-keys env [:jdbc-database-url]))
       (System/exit 0))
     :else
     (start-app args)))
-  
