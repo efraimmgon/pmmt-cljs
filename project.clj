@@ -12,7 +12,7 @@
                  [cljsjs/jquery "3.2.1-0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
                  [compojure "1.5.1"]
-                 [conman "0.6.1"]
+                 [conman "0.6.7"]
                  [cprop "0.1.9"]
                  [day8.re-frame/http-fx "0.1.2"]
                  [luminus-immutant "0.2.2"]

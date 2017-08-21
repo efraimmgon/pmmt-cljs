@@ -12,7 +12,7 @@
 ;     (mount/start
 ;       #'pmmt.config/env
 ;       #'pmmt.db.core/*db*)
-;     (migrations/migrate ["migrate"] (select-keys env [:jdbc-database-url]))
+;     (migrations/migrate ["migrate"] (select-keys env [:database-url]))
 ;     (f)))
 ;
 ; (deftest test-users
