@@ -1,7 +1,8 @@
 (ns pmmt.routes.admin
   (:require [clojure.java.jdbc :as jdbc]
             [ring.util.http-response :as response]
-            [pmmt.db.core :as db :refer [*db*]]))
+            [pmmt.db.core :as db]
+            [pmmt.utils :refer [domap]]))
 
 (defn str->int [s]
   (try (Integer. s)
@@ -25,3 +26,9 @@
 (defn get-users []
   (response/ok
    (db/get-users)))
+
+(defn update-crime-reports! [crime-reports]
+  (domap db/update-crime-report!
+         crime-reports)
+  (response/ok
+   {:result :ok}))

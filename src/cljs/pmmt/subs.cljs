@@ -31,3 +31,7 @@
 ; Geo --------------------------------------------------------------
 
 (reg-sub :show-table? query)
+
+(reg-sub :goog-api-key query)
+
+(reg-sub :sinop query)

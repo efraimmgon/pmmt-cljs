@@ -4,6 +4,7 @@
             [ajax.core :as ajax]
             day8.re-frame.http-fx
             pmmt.handlers.admin
+            pmmt.handlers.geocode
             pmmt.handlers.geoprocessing
             pmmt.handlers.report
             pmmt.handlers.utils))
@@ -33,7 +34,8 @@
  :set-initial-state
  (fn [db _]
    (deep-merge-with merge
-    {
+    {:goog-api-key "AIzaSyA7ekvGGHxVTwTVcpi073GOERnktqvmYz8"
+     :sinop {:lat -11.8608456, :lng -55.50954509999997}
      :admin {:active-page "Painel"
              :active-panel :dashboard
              :database {:setup-ready? false

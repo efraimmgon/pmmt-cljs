@@ -71,12 +71,13 @@ INSERT INTO crimes (type) VALUES (:type)
 -- create a `crime` record with id
 INSERT INTO crimes (id, type) VALUES (:id, :type)
 
+
 -- -------------------------------------------------------------------
 -- CRIME REPORTS
 -- -------------------------------------------------------------------
 
 -- :name create-crime-report! :! :n
--- create a `crime-report` record
+-- create a `crime_reports` record
 INSERT INTO crime_reports
 (report_number, report, crime_id, mode_desc_id, city_id, neighborhood,
  route_type, route, route_number, created_at, created_on)
@@ -84,10 +85,30 @@ VALUES
 (:report_number, :report, :crime_id, :mode_desc_id, :city_id, :neighborhood,
  :route_type, :route, :route_number, :created_at, :created_on)
 
+ -- :name update-crime-report! :! :n
+ -- update a `crime_reports` record
+ UPDATE crime_reports
+   SET report_number = :report_number,
+       report = :report,
+       crime_id = :crime_id,
+       mode_desc_id = :mode_desc_id,
+       city_id = :city_id,
+       neighborhood = :neighborhood,
+       route_type = :route_type,
+       route = :route,
+       route_number = :route_number,
+       route_complement = :route_complement,
+       latitude = :latitude,
+       longitude = :longitude,
+       created_at = :created_at,
+       created_on = :created_on
+   WHERE id = :id
+
 -- :name crime-reports-with-null-coordinates :? :*
 -- fetch `crime-reports` records with `latitude` and `longitude` = null
 SELECT * FROM crime_reports
- WHERE latitude = NULL AND longitude = NULL
+ WHERE latitude IS NULL AND longitude IS NULL
+
 
  -- -------------------------------------------------------------------
  -- MODES DESC
@@ -99,6 +120,7 @@ SELECT * FROM modes_desc
 -- :name create-mode-desc! :! :n
 INSERT INTO modes_desc
   (type) VALUES (:type)
+
 
 -- -------------------------------------------------------------------
 -- CITIES

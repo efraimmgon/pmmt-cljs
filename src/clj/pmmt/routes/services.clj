@@ -127,9 +127,18 @@
   (GET "/db/crime-reports/geocode" []
        :summary "Retrive `crime-reports` rows with `latitude` = null"
        (admin/get-ungeocoded-reports))
+
   (POST "/upload" req
         :multipart-params [file :- TempFileUpload]
         :middleware [wrap-multipart-params]
         :summary "handles reports csv file upload"
         :return Result
-        (upload/save-data! file)))
+        (upload/save-data! file))
+
+  (context
+   "/api" []
+   :tags ["api"]
+   (PUT "/crime-reports/update" req
+        :summary "Update `crime-reports` with the given data, identified by `id`"
+        :return Result
+        (admin/update-crime-reports! (:body-params req)))))

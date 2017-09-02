@@ -3,7 +3,7 @@
             [re-frame.core :as re-frame :refer [dispatch-sync]]
             [pmmt.routes :refer [hook-browser-navigation!]]
             [pmmt.views :refer [page navbar]]
-            ;;initialize handlers and subscriptions
+            ;; register handlers and subscriptions
             pmmt.handlers
             pmmt.subs))
 
