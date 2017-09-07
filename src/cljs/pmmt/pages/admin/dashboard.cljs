@@ -3,186 +3,342 @@
    [reagent.core :as r]))
 
 ; -----------------------------------------------------------------------
-; Dashboard Components
+; SIDEBAR
 ; -----------------------------------------------------------------------
 
-(defn content-summary []
-  [:div.row
-   [:div.col-lg-3.col-md-6
-    [:div.panel.panel-primary
-     [:div.panel-heading
-      [:div.row
-       [:div.col-xs-3 [:i.fa.fa-comments.fa-5x]]
-       [:div.col-xs-9.text-right
-        [:div.huge "26"]
-        [:div "New Comments!"]]]]
-     [:a {:href "#"}]
-     [:div.panel-footer
-      [:span.pull-left "View Details"]
-      [:span.pull-right [:i.fa.fa-arrow-circle-right]]
-      [:div.clearfix]]]]
-   [:div.col-lg-3.col-md-6
-    [:div.panel.panel-green
-     [:div.panel-heading
-      [:div.row
-       [:div.col-xs-3 [:i.fa.fa-tasks.fa-5x]]
-       [:div.col-xs-9.text-right
-        [:div.huge "12"]
-        [:div "New Tasks!"]]]]
-     [:a {:href "#"}]
-     [:div.panel-footer
-      [:span.pull-left "View Details"]
-      [:span.pull-right [:i.fa.fa-arrow-circle-right]]
-      [:div.clearfix]]]]
-   [:div.col-lg-3.col-md-6
-    [:div.panel.panel-yellow
-     [:div.panel-heading
-      [:div.row
-       [:div.col-xs-3 [:i.fa.fa-shopping-cart.fa-5x]]
-       [:div.col-xs-9.text-right
-        [:div.huge "124"]
-        [:div "New Orders!"]]]]
-     [:a {:href "#"}]
-     [:div.panel-footer
-      [:span.pull-left "View Details"]
-      [:span.pull-right [:i.fa.fa-arrow-circle-right]]
-      [:div.clearfix]]]]
-   [:div.col-lg-3.col-md-6
-    [:div.panel.panel-red
-     [:div.panel-heading
-      [:div.row
-       [:div.col-xs-3 [:i.fa.fa-support.fa-5x]]
-       [:div.col-xs-9.text-right
-        [:div.huge "13"]
-        [:div "Support Tickets!"]]]]
-     [:a {:href "#"}]
-     [:div.panel-footer
-      [:span.pull-left "View Details"]
-      [:span.pull-right [:i.fa.fa-arrow-circle-right]]
-      [:div.clearfix]]]]])
+(defn sidebar []
+  [:div.sidebar
+   ; Tip 1: you can change the color of the sidebar using:
+   ; data-color=\"blue | azure | green | orange | red | purple\"
+   ; Tip 2: you can also add an image using data-image tag
+   {:data-image "/img/sidebar-5.jpg" :data-color "purple"}
+   [:div.sidebar-wrapper
+    [:div.logo
+     [:a.simple-text
+      {:href "http://www.pm.mt.gov.br"}
+      "PMMT"]]
+    [:ul.nav
+     [:li.active
+      [:a {:href "dashboard.html"}
+       [:i.pe-7s-graph]
+       [:p "Dashboard"]]]
+     [:li
+      [:a {:href "user.html"}
+       [:i.pe-7s-user]
+       [:p "User Profile"]]]
+     [:li
+      [:a {:href "table.html"}
+       [:i.pe-7s-note2]
+       [:p "Table List"]]]
+     [:li
+      [:a {:href "typography.html"}
+       [:i.pe-7s-news-paper]
+       [:p "Typography"]]]
+     [:li
+      [:a {:href "icons.html"}
+       [:i.pe-7s-science]
+       [:p "Icons"]]]
+     [:li
+      [:a {:href "maps.html"}
+       [:i.pe-7s-map-marker]
+       [:p "Maps"]]]
+     [:li
+      [:a {:href "notifications.html"}
+       [:i.pe-7s-bell]
+       [:p "Notifications"]]]
+     [:li.active-pro
+      [:a {:href "upgrade.html"}
+       [:i.pe-7s-rocket]
+       [:p "Upgrade to PRO"]]]]]
+   [:div.sidebar-background {:style {:background-image "url(/img/sidebar-5.jpg)"}}]])
 
-(defn tasks-panel []
-  [:div.row
-    [:div.col-lg-12
-     [:div.panel.panel-default
-      [:div.panel-heading
-       [:h3.panel-title [:i.fa.fa-clock-o.fa-fw] " Tasks Panel"]]
-      [:div.panel-body
-       [:div.list-group
-        [:a.list-group-item
-         {:href "#"}
-         [:span.badge "just now"]
-         [:i.fa.fa-fw.fa-calendar]
-         " Calendar updated"]
-        [:a.list-group-item
-         {:href "#"}
-         [:span.badge "4 minutes ago"]
-         [:i.fa.fa-fw.fa-comment]
-         " Commented on a post"]
-        [:a.list-group-item
-         {:href "#"}
-         [:span.badge "23 minutes ago"]
-         [:i.fa.fa-fw.fa-truck]
-         " Order 392 shipped"]
-        [:a.list-group-item
-         {:href "#"}
-         [:span.badge "46 minutes ago"]
-         [:i.fa.fa-fw.fa-money]
-         " Invoice 653 has been paid"]
-        [:a.list-group-item
-         {:href "#"}
-         [:span.badge "1 hour ago"]
-         [:i.fa.fa-fw.fa-user]
-         " A new user has been added"]
-        [:a.list-group-item
-         {:href "#"}
-         [:span.badge "2 hours ago"]
-         [:i.fa.fa-fw.fa-check]
-         " Completed task: \"pick up dry cleaning\""]
-        [:a.list-group-item
-         {:href "#"}
-         [:span.badge "yesterday"]
-         [:i.fa.fa-fw.fa-globe]
-         " Saved the world"]
-        [:a.list-group-item
-         {:href "#"}
-         [:span.badge "two days ago"]
-         [:i.fa.fa-fw.fa-check]
-         " Completed task: \"fix error on sales page\""]]
-       [:div.text-right
-        [:a
-         {:href "#"}
-         "View All Activity "
-         [:i.fa.fa-arrow-circle-right]]]]]]])
+; -----------------------------------------------------------------------
+; NAVBAR
+; -----------------------------------------------------------------------
 
-(defn transactions-panel []
-  [:div.row
-    [:div.col-lg-12
-     [:div.panel.panel-default
-      [:div.panel-heading
-       [:h3.panel-title
-        [:i.fa.fa-money.fa-fw]
-        " Transactions Panel"]]
-      [:div.panel-body
-       [:div.table-responsive
-        [:table.table.table-bordered.table-hover.table-striped
-         [:thead
-          [:tr
-           [:th "Order #"]
-           [:th "Order Date"]
-           [:th "Order Time"]
-           [:th "Amount (USD)"]]]
-         [:tbody
-          [:tr
-           [:td "3326"]
-           [:td "10/21/2013"]
-           [:td "3:29 PM"]
-           [:td "$321.33"]]
-          [:tr
-           [:td "3325"]
-           [:td "10/21/2013"]
-           [:td "3:20 PM"]
-           [:td "$234.34"]]
-          [:tr
-           [:td "3324"]
-           [:td "10/21/2013"]
-           [:td "3:03 PM"]
-           [:td "$724.17"]]
-          [:tr
-           [:td "3323"]
-           [:td "10/21/2013"]
-           [:td "3:00 PM"]
-           [:td "$23.71"]]
-          [:tr
-           [:td "3322"]
-           [:td "10/21/2013"]
-           [:td "2:49 PM"]
-           [:td "$8345.23"]]
-          [:tr
-           [:td "3321"]
-           [:td "10/21/2013"]
-           [:td "2:23 PM"]
-           [:td "$245.12"]]
-          [:tr
-           [:td "3320"]
-           [:td "10/21/2013"]
-           [:td "2:15 PM"]
-           [:td "$5663.54"]]
-          [:tr
-           [:td "3319"]
-           [:td "10/21/2013"]
-           [:td "2:13 PM"]
-           [:td "$943.45"]]]]]
-       [:div.text-right
-        [:a
-         {:href "#"}
-         "View All Transactions "
-         [:i.fa.fa-arrow-circle-right]]]]]]])
+(defn navbar []
+  [:nav.navbar.navbar-default.navbar-fixed
+   [:div.container-fluid
+    [:div.navbar-header
+     [:button.navbar-toggle
+      {:data-target "#navigation-example-2",
+       :data-toggle "collapse",
+       :type "button"}
+      [:span.sr-only "Toggle navigation"]
+      [:span.icon-bar]
+      [:span.icon-bar]
+      [:span.icon-bar]]
+     [:a.navbar-brand {:href "#"} "Dashboard"]]
+    [:div.collapse.navbar-collapse
+     [:ul.nav.navbar-nav.navbar-left
+      [:li
+       [:a.dropdown-toggle
+        {:data-toggle "dropdown", :href "#"}
+        [:i.fa.fa-dashboard]]
+       [:p.hidden-lg.hidden-md "Dashboard"]]
+      [:li.dropdown
+       [:a.dropdown-toggle
+        {:data-toggle "dropdown", :href "#"}
+        [:i.fa.fa-globe]
+        [:b.caret.hidden-sm.hidden-xs]
+        [:span.notification.hidden-sm.hidden-xs "5"]]
+       [:p.hidden-lg.hidden-md
+        "\n\t\t\t\t\t\t\t\t\t\t5 Notifications\n\t\t\t\t\t\t\t\t\t\t"
+        [:b.caret]]
+       [:ul.dropdown-menu
+        [:li [:a {:href "#"} "Notification 1"]]
+        [:li [:a {:href "#"} "Notification 2"]]
+        [:li [:a {:href "#"} "Notification 3"]]
+        [:li [:a {:href "#"} "Notification 4"]]
+        [:li [:a {:href "#"} "Another notification"]]]]
+      [:li
+       [:a {:href ""} [:i.fa.fa-search]]
+       [:p.hidden-lg.hidden-md "Search"]]]
+     [:ul.nav.navbar-nav.navbar-right
+      [:li [:a {:href ""} [:p "Account"]]]
+      [:li.dropdown
+       [:a.dropdown-toggle {:data-toggle "dropdown", :href "#"}
+        [:p
+         "\n\t\t\t\t\t\t\t\t\t\tDropdown\n\t\t\t\t\t\t\t\t\t\t"
+         [:b.caret]]]
+       [:ul.dropdown-menu
+        [:li [:a {:href "#"} "Action"]]
+        [:li [:a {:href "#"} "Another action"]]
+        [:li [:a {:href "#"} "Something"]]
+        [:li [:a {:href "#"} "Another action"]]
+        [:li [:a {:href "#"} "Something"]]
+        [:li.divider]
+        [:li [:a {:href "#"} "Separated link"]]]]
+      [:li [:a {:href "#"} [:p "Log out"]]]
+      [:li.separator.hidden-lg.hidden-md]]]]])
 
-(defn dashboard []
-  ; "<!-- Page Heading -->"
-  [:div
-   [:h3 "Nothing to see."]])
-   ;[content-summary]])
-   ; panels
-   ;[tasks-panel]])
+; -----------------------------------------------------------------------
+; CONTENT
+; -----------------------------------------------------------------------
+
+(defn email-statistics []
+  [:div.card
+   [:div.header
+    [:h4.title "Email Statistics"]
+    [:p.category "Last Campaign Performance"]]
+   [:div.content
+    [:div#chartPreferences.ct-chart.ct-perfect-fourth]
+    [:div.footer
+     [:div.legend
+      [:i.fa.fa-circle.text-info]
+      "Open"
+      [:i.fa.fa-circle.text-danger]
+      "Bounce"
+      [:i.fa.fa-circle.text-warning]
+      "Unsubscribe"]
+     [:hr]
+     [:div.stats
+      [:i.fa.fa-clock-o]
+      "Campaign sent 2 days ago"]]]])
+
+(defn user-behavior []
+  [:div.card
+   [:div.header
+    [:h4.title "Users Behavior"]
+    [:p.category "24 Hours performance"]]
+   [:div.content
+    [:div#chartHours.ct-chart]
+    [:div.footer
+     [:div.legend
+      [:i.fa.fa-circle.text-info]
+      "Open"
+      [:i.fa.fa-circle.text-danger]
+      "Click"
+      [:i.fa.fa-circle.text-warning]
+      "Click Second Time"]
+     [:hr]
+     [:div.stats
+      [:i.fa.fa-history]
+      "Updated 3 minutes ago"]]]])
+
+(defn sales []
+  [:div.card
+   [:div.header
+    [:h4.title "2014 Sales"]
+    [:p.category "All products including Taxes"]]
+   [:div.content
+    [:div#chartActivity.ct-chart]
+    [:div.footer
+     [:div.legend
+      [:i.fa.fa-circle.text-info]
+      "Tesla Model S"
+      [:i.fa.fa-circle.text-danger]
+      "BMW 5 Series"]
+     [:hr]
+     [:div.stats
+      [:i.fa.fa-check]
+      "Data information certified"]]]])
+
+(defn tasks []
+  [:div.card
+   [:div.header
+    [:h4.title "Tasks"]
+    [:p.category "Backend development"]]
+   [:div.content
+    [:div.table-full-width
+     [:table.table
+      [:tbody
+       [:tr
+        [:td
+         [:label.checkbox
+          [:input
+           {:data-toggle "checkbox",
+            :value "",
+            :type "checkbox"}]]]
+        [:td
+         "Sign contract for \"What are conference organizers afraid of?\""]
+        [:td.td-actions.text-right
+         [:button.btn.btn-info.btn-simple.btn-xs
+          {:title "Edit Task", :rel "tooltip", :type "button"}
+          [:i.fa.fa-edit]]
+         [:button.btn.btn-danger.btn-simple.btn-xs
+          {:title "Remove", :rel "tooltip", :type "button"}
+          [:i.fa.fa-times]]]]
+       [:tr
+        [:td
+         [:label.checkbox
+          [:input
+           {:checked "",
+            :data-toggle "checkbox",
+            :value "",
+            :type "checkbox"}]]]
+        [:td
+         "Lines From Great Russian Literature? Or E-mails From My Boss?"]
+        [:td.td-actions.text-right
+         [:button.btn.btn-info.btn-simple.btn-xs
+          {:title "Edit Task", :rel "tooltip", :type "button"}
+          [:i.fa.fa-edit]]
+         [:button.btn.btn-danger.btn-simple.btn-xs
+          {:title "Remove", :rel "tooltip", :type "button"}
+          [:i.fa.fa-times]]]]
+       [:tr
+        [:td
+         [:label.checkbox
+          [:input
+           {:checked "",
+            :data-toggle "checkbox",
+            :value "",
+            :type "checkbox"}]]]
+        [:td
+         "Flooded: One year later, assessing what was lost and what was found when a ravaging rain swept through metro Detroit\n"]
+        [:td.td-actions.text-right
+         [:button.btn.btn-info.btn-simple.btn-xs
+          {:title "Edit Task", :rel "tooltip", :type "button"}
+          [:i.fa.fa-edit]]
+         [:button.btn.btn-danger.btn-simple.btn-xs
+          {:title "Remove", :rel "tooltip", :type "button"}
+          [:i.fa.fa-times]]]]
+       [:tr
+        [:td
+         [:label.checkbox
+          [:input
+           {:data-toggle "checkbox",
+            :value "",
+            :type "checkbox"}]]]
+        [:td
+         "Create 4 Invisible User Experiences you Never Knew About"]
+        [:td.td-actions.text-right
+         [:button.btn.btn-info.btn-simple.btn-xs
+          {:title "Edit Task", :rel "tooltip", :type "button"}
+          [:i.fa.fa-edit]]
+         [:button.btn.btn-danger.btn-simple.btn-xs
+          {:title "Remove", :rel "tooltip", :type "button"}
+          [:i.fa.fa-times]]]]
+       [:tr
+        [:td
+         [:label.checkbox
+          [:input
+           {:data-toggle "checkbox",
+            :value "",
+            :type "checkbox"}]]]
+        [:td "Read \"Following makes Medium better\""]
+        [:td.td-actions.text-right
+         [:button.btn.btn-info.btn-simple.btn-xs
+          {:title "Edit Task", :rel "tooltip", :type "button"}
+          [:i.fa.fa-edit]]
+         [:button.btn.btn-danger.btn-simple.btn-xs
+          {:title "Remove", :rel "tooltip", :type "button"}
+          [:i.fa.fa-times]]]]
+       [:tr
+        [:td
+         [:label.checkbox
+          [:input
+           {:data-toggle "checkbox",
+            :value "",
+            :type "checkbox"}]]]
+        [:td "Unfollow 5 enemies from twitter"]
+        [:td.td-actions.text-right
+         [:button.btn.btn-info.btn-simple.btn-xs
+          {:title "Edit Task", :rel "tooltip", :type "button"}
+          [:i.fa.fa-edit]]
+         [:button.btn.btn-danger.btn-simple.btn-xs
+          {:title "Remove", :rel "tooltip", :type "button"}
+          [:i.fa.fa-times]]]]]]]
+    [:div.footer
+     [:hr]
+     [:div.stats
+      [:i.fa.fa-history]
+      "Updated 3 minutes ago"]]]])
+
+(defn content []
+  [:div.content
+   [:div.container-fluid
+    [:div.row
+     [:div.col-md-4
+      [email-statistics]]
+     [:div.col-md-8
+      [user-behavior]]]
+    [:div.row
+     [:div.col-md-6
+      [sales]]
+     [:div.col-md-6
+      [tasks]]]]])
+
+; -----------------------------------------------------------------------
+; FOOTER
+; -----------------------------------------------------------------------
+
+(defn footer []
+  [:footer.footer
+   [:div.container-fluid
+    [:nav.pull-left
+     [:ul
+      [:li
+       [:a
+        {:href "#"}
+        "Home"]]
+      [:li
+       [:a
+        {:href "#"}
+        "Company"]]
+      [:li
+       [:a
+        {:href "#"}
+        "Portfolio"]]
+      [:li
+       [:a
+        {:href "#"}
+        "Blog"]]]]
+    [:p.copyright.pull-right
+     "© "
+     (.getFullYear (js/Date.))
+     " "
+     [:a {:href "http://www.creative-tim.com"} "Creative Tim"]
+     ", made with love for a better web"]]])
+
+; -----------------------------------------------------------------------
+; Main
+; -----------------------------------------------------------------------
+
+(defn dashboard-template []
+  [:div.wrapper
+   [sidebar]
+   [:div.main-panel
+    [navbar]
+    [content]
+    [footer]]])

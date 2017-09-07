@@ -3,7 +3,7 @@
    [reagent.core :as r :refer [atom]]
    [re-frame.core :as re-frame :refer [subscribe dispatch]]
    [pmmt.components.common :as c]
-   [pmmt.pages.admin.dashboard :refer [dashboard]]
+   [pmmt.pages.admin.dashboard :refer [dashboard-template]]
    [pmmt.pages.admin.database :as database]
    [pmmt.pages.admin.navbar :as navbar]
    [pmmt.pages.admin.users :refer [users-template]]))
@@ -19,14 +19,19 @@
 ; Setup
 ; -----------------------------------------------------------------
 
-(defn load-scripts! []
-  (c/add-style! {:href "/css/sb-admin.css"})
-  (c/add-style! {:href "/css/plugins/morris.css"}))
+(defn load-styles! []
+  ;; Animation library for notifications
+  (c/add-style! {:href "/css/animate.min.css"})
+  ;; Light Bootstrap Table core CSS
+  (c/add-style! {:href "/css/light-bootstrap-dashboard.css"})
+  ;; Fonts and icons
+  (c/add-style! {:href "http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css"})
+  (c/add-style! {:href "http://fonts.googleapis.com/css?family=Roboto:400,700,300"})
+  (c/add-style! {:href "/css/pe-icon-7-stroke.css"}))
 
 (defn setup! []
   (let [setup-ready? (r/cursor local-state [:setup-ready?])]
     (when-not @setup-ready?
-      (load-scripts!)
       (reset! setup-ready? true))))
 
 ; -----------------------------------------------------------------
@@ -49,7 +54,7 @@
 ; -----------------------------------------------------------------
 
 (def panels
-  {:dashboard dashboard
+  {;:dashboard dashboard
    :database database/main
    :users users-template})
 
@@ -65,17 +70,8 @@
 ; Main
 ; -----------------------------------------------------------------
 
-(def scripts
-  {#(exists? js/Raphael) "/js/plugins/morris/raphael.min.js"
-   #(exists? js/Morris) "/js/plugins/morris/morris.min.js"})
-
 ;; TODO: change name
 (defn main-template []
   (setup!)
   (fn []
-    [c/js-loader
-     {:scripts scripts
-      :loading [:div.loading "Loading..."]
-      :loaded [:div#wrapper
-               [navbar/main]
-               [main-content]]}]))
+    [dashboard-template]))

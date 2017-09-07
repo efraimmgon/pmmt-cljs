@@ -6,9 +6,19 @@
     <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PMMT</title>
-    {% style "/assets/bootstrap/css/bootstrap.min.css" %}
+    <!-- Bootstrap core CSS     -->
     {% style "/css/bootstrap.min.css" %}
-    {% style "/assets/font-awesome/css/font-awesome.min.css" %}
+
+    <!-- Animation library for notifications   -->
+    {% style "/css/animate.min.css" %}
+
+    <!--  Light Bootstrap Table core CSS    -->
+    {% style "/css/light-bootstrap-dashboard.css" %}
+
+    <!--     Fonts and icons     -->
+    {% style "http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" %}
+    {% style "http://fonts.googleapis.com/css?family=Roboto:400,700,300" %}
+    {% style "/css/pe-icon-7-stroke.css" %}
   </head>
   <body>
     <div id="navbar"></div>
@@ -22,12 +32,6 @@
       </div>
     </div>
 
-
-    <!-- datetime picker
-    {% style "/css/jquery.datetimepicker.min.css" %}
-    {% script "/js/jquery.datetimepicker.full.min.js" %}
-    -->
-
     <script type="text/javascript">
         var context = "{{servlet-context}}";
         var csrfToken = "{{csrf-token}}";
@@ -36,8 +40,24 @@
 
     <!-- custom css -->
     {% style "/css/screen.css" %}
-    <div id="scripts"></div>
 
+    <!--   Core JS Files   -->
+    {% script "/js/jquery-1.10.2.js" %}
+    {% script "/js/bootstrap.min.js" %}
+
+    <!--  Checkbox, Radio & Switch Plugins -->
+    {% script "/js/bootstrap-checkbox-radio-switch.js" %}
+
+    <!--  Notifications Plugin    -->
+    {% script "/js/bootstrap-notify.js" %}
+
+    <!--  Charts Plugin -->
+    {% script "/js/chartist.min.js" %}
+
+    <!-- app -->
     {% script "/js/app.js" %}
+
+    <!-- Light Bootstrap Table Core javascript and methods for Demo purpose -->
+    {% script "/js/light-bootstrap-dashboard.js" %}
   </body>
 </html>
