@@ -6,6 +6,7 @@
             pmmt.handlers.admin
             pmmt.handlers.geocode
             pmmt.handlers.geoprocessing
+            pmmt.handlers.login
             pmmt.handlers.report
             pmmt.handlers.utils))
 
@@ -34,14 +35,18 @@
  :set-initial-state
  (fn [db _]
    (deep-merge-with merge
-    {:goog-api-key "AIzaSyA7ekvGGHxVTwTVcpi073GOERnktqvmYz8"
-     :sinop {:lat -11.8608456, :lng -55.50954509999997}
+    {:sinop {:lat -11.8608456, :lng -55.50954509999997}
      :admin {:active-page "Painel"
              :active-panel :dashboard
              :database {:setup-ready? false
                         :active-panel :database
                         ;; TODO: move to config file
-                        :tables ["cities", "crimes", "crime_reports", "modes_desc"]}}}
+                        :tables ["cities", "crimes", "crime_reports", "modes_desc"]}}
+     :settings {:page-background-image "/img/full-screen-image-1.jpg"
+                :page-color-palette "black"
+                :sidebar-background-image "/img/sidebar-5.jpg"
+                :sidebar-color-palette "black"
+                :google-api-key "AIzaSyA7ekvGGHxVTwTVcpi073GOERnktqvmYz8"}}
     db)))
 
 (reg-event-fx

@@ -13,20 +13,26 @@
 ; Main
 ; -------------------------------------------------------------------------
 
-(defn users-table []
-  (let [users (subscribe [:admin/users])]
-    (fn []
-      [:div.table-responsive
-       [:table.table.table-striped.table-bordered
-        [c/thead (keys (first @users))]
-        [c/tbody @users]]])))
+(defn users-template [users]
+  [:div.row>div.col-md-12
+   [:div.card
+    [:div.header
+     [:h4.title "Registered Users"]]
+    [:div.content.table-responsive.table-full-width
+     [:table.table.table-striped.table-bordered
+      [c/thead (keys (first @users))]
+      [c/tbody @users]]]]])
 
-(defn users-template []
+
+(defn content []
   (setup!)
-  (fn []
-    [:div
-     [c/nav-button
-      {:handler #(dispatch [:modal reg/registration-form])
-       :title "Adicionar usuário"}]
-     [:hr]
-     [users-table]]))
+  (r/with-let [users (subscribe [:admin/users])]
+    [:div.content>div.container-fluid
+
+     [:div.row>div.col-md-12
+      [:div.card>div.content
+       [:button.btn.btn-wd
+        {:on-click #(dispatch [:modal reg/registration-form])}
+        "Add user"]]
+
+      [users-template users]]]))

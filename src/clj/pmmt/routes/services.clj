@@ -6,6 +6,7 @@
    [compojure.api.upload :refer
     [wrap-multipart-params TempFileUpload]]
    [schema.core :as s]
+   [schema.coerce :as coerce]
    [pmmt.routes.home :as home]
    [pmmt.routes.report :as report]
    [pmmt.routes.geo :as geo]
@@ -25,6 +26,12 @@
 (s/defschema TimeDeltaParams
              {:date String
               :days String})
+
+(s/defschema CrimeReportsByRequest
+  {:year s/Int})
+
+(def parse-crime-reports-by-request
+  (coerce/coercer CrimeReportsByRequest coerce/json-coercion-matcher))
 
 ; ---------------------------------------------------------------------
 ; Geo
@@ -141,4 +148,24 @@
    (PUT "/crime-reports/update" req
         :summary "Update `crime-reports` with the given data, identified by `id`"
         :return Result
-        (admin/update-crime-reports! (:body-params req)))))
+        (admin/update-crime-reports! (:body-params req)))
+
+   (GET "/crime-reports/by-crime-type" []
+        :summary "`crime_reports` grouped by crime type, filtered by year"
+        :query [req-params CrimeReportsByRequest]
+        (admin/get-crime-reports-by-crime-type req-params))
+
+   (GET "/crime-reports/by-month" []
+        :summary "`crime_reports` grouped by month, filtered by year"
+        :query [req-params CrimeReportsByRequest]
+        (admin/get-crime-reports-by-month req-params))
+
+   (GET "/crime-reports/by-period" []
+        :summary "`crime_reports` grouped by 6 hour periods (00:00 - 05:59 ...), filtered by year"
+        :query [req-params CrimeReportsByRequest]
+        (admin/get-crime-reports-by-period req-params))
+
+   (GET "/crime-reports/by-hour" []
+        :summary "`crime_reports` grouped by hour, filtered by year"
+        :query [req-params CrimeReportsByRequest]
+        (ok (db/get-crime-reports-by-hour req-params)))))

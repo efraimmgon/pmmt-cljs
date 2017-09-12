@@ -4,6 +4,7 @@
   (:require
    [ajax.core :as ajax]
    [clojure.string :as string]
+   [reagent.core :as r]
    [re-frame.core :refer [dispatch reg-event-db reg-sub]]
    [pmmt.subs :refer [query]]))
 
@@ -17,9 +18,9 @@
    (get-in db [:admin :active-panel])))
 
 (reg-sub
- :admin/active-page
+ :admin/active-panel-title
  (fn [db _]
-   (get-in db [:admin :active-page])))
+   (get-in db [:admin :active-panel-title])))
 
 (reg-sub
  :admin/active-sidebar
@@ -53,18 +54,95 @@
    (get-in db [:admin :database :tables])))
 
 (reg-sub
- :admin.navbar/active-menu
- (fn [db _]
-   (get-in db [:admin :navbar :active-menu])))
-
-(reg-sub
  :admin.users/setup-ready?
  (fn [db _]
    (get-in db [:admin :users :setup-ready?])))
 
+; Crime reports -----------------------------------------------------------
+
+(reg-sub
+ :admin.crime-reports/by-crime-type
+ (fn [db _]
+   (get-in db [:admin :crime-reports :by-crime-type])))
+
+(reg-sub
+ :admin.crime-reports/by-month
+ (fn [db _]
+   (get-in db [:admin :crime-reports :by-month])))
+
+(reg-sub
+ :admin.crime-reports/by-period
+ (fn [db _]
+   (get-in db [:admin :crime-reports :by-period])))
+
+(reg-sub
+ :admin.crime-reports/by-hour
+ (fn [db _]
+   (get-in db [:admin :crime-reports :by-hour])))
+
 ; -------------------------------------------------------------------------
 ; Handlers
 ; -------------------------------------------------------------------------
+
+; Helpers -----------------------------------------------------------------
+
+(reg-event-db
+ :admin/set-crime-reports-by-crime-type
+ (fn [db [_ rows]]
+   (assoc-in db [:admin :crime-reports :by-crime-type] rows)))
+
+(reg-event-db
+ :admin/set-crime-reports-by-month
+ (fn [db [_ rows]]
+   (assoc-in db [:admin :crime-reports :by-month] rows)))
+
+(reg-event-db
+ :admin/set-crime-reports-by-period
+ (fn [db [_ rows]]
+   (assoc-in db [:admin :crime-reports :by-period] rows)))
+
+(reg-event-db
+ :admin/set-crime-reports-by-hour
+ (fn [db [_ rows]]
+   (assoc-in db [:admin :crime-reports :by-hour] rows)))
+
+; DB Query ----------------------------------------------------------------
+
+(reg-event-db
+ :api/get-crime-reports-by-crime-type
+ (fn [db [_ year]]
+   (ajax/GET "/api/crime-reports/by-crime-type"
+             {:handler #(dispatch [:admin/set-crime-reports-by-crime-type %])
+              :params {:year year}
+              :error-handler #(log %)})
+   db))
+
+(reg-event-db
+ :api/get-crime-reports-by-month
+ (fn [db [_ year]]
+   (ajax/GET "/api/crime-reports/by-month"
+             {:handler #(dispatch [:admin/set-crime-reports-by-month %])
+              :params {:year year}
+              :error-handler #(log %)})
+   db))
+
+(reg-event-db
+ :api/get-crime-reports-by-period
+ (fn [db [_ year]]
+   (ajax/GET "/api/crime-reports/by-period"
+             {:handler #(dispatch [:admin/set-crime-reports-by-period %])
+              :params {:year year}
+              :error-handler #(log %)})
+   db))
+
+(reg-event-db
+ :api/get-crime-reports-by-hour
+ (fn [db [_ year]]
+   (ajax/GET "/api/crime-reports/by-hour"
+             {:handler #(dispatch [:admin/set-crime-reports-by-hour %])
+              :params {:year year}
+              :error-handler #(log %)})
+   db))
 
 ;; get db rows from `table`
 (reg-event-db
@@ -89,7 +167,7 @@
  :admin/set-active-panel
  (fn [db [_ title panel-id]]
    (-> db
-      (assoc-in [:admin :active-page] title)
+      (assoc-in [:admin :active-panel-title] title)
       (assoc-in [:admin :active-panel] panel-id))))
 
 (reg-event-db
@@ -119,13 +197,6 @@
    (assoc-in db [:admin :database :active-panel] panel-id)))
 
 (reg-event-db
- :admin.navbar/toggle-active-menu
- (fn [db [_ id]]
-   (if (= id (get-in db [:admin :navbar :active-menu]))
-     (assoc-in db [:admin :navbar :active-menu] nil)
-     (assoc-in db [:admin :navbar :active-menu] id))))
-
-(reg-event-db
  :get-users
  (fn [db _]
    (ajax/GET "/db/users"
@@ -136,5 +207,45 @@
 (reg-event-db
  :set-users
  (fn [db [_ users]]
-
    (assoc db :users users)))
+
+
+; -------------------------------------------------------------------------
+; Chartist
+; -------------------------------------------------------------------------
+
+(reg-event-db
+ :charts/plot-pie-chart
+ (fn [db [_ comp]]
+   (let [[_ data] (r/argv comp)
+         container (r/dom-node comp)
+         data {:labels (first  data)
+               :series (second data)}]
+     (js/Chartist.Pie.
+      container
+      (clj->js data)))
+   db))
+
+(reg-event-db
+ :charts/plot-line-chart
+ (fn [db [_ comp]]
+   (let [[_ data] (r/argv comp)
+         container (r/dom-node comp)
+         data {:labels (first  data)
+               :series (second data)}]
+     (js/Chartist.Line.
+      container
+      (clj->js data)))
+   db))
+
+(reg-event-db
+ :charts/plot-bar-chart
+ (fn [db [_ comp]]
+   (let [[_ data] (r/argv comp)
+         container (r/dom-node comp)
+         data {:labels (first  data)
+               :series (second data)}]
+     (js/Chartist.Bar.
+      container
+      (clj->js data)))
+   db))

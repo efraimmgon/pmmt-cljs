@@ -129,10 +129,10 @@
 ; -------------------------------------------------------------------------
 
 (defn panel-template [title & body]
-  [:div.panel.panel-primary
-   [:div.panel-heading
-    [:h3 title]]
-   (into [:div.panel-body]
+  [:div.card
+   [:div.header
+    [:h4.title title]]
+   (into [:div.content]
          body)])
 
 (defn database-panel []
@@ -149,6 +149,7 @@
 ; -------------------------------------------------------------------------
 ; Navigation
 ; -------------------------------------------------------------------------
+
 (defn nav-pill [title panel-id active-panel]
   [:li
    {:class (when (= panel-id @active-panel) "active")
@@ -156,10 +157,11 @@
    [:a.btn title]])
 
 (defn inner-navigation [active-panel]
-  [:ul.nav.nav-tabs
-   [nav-pill "Tabelas" :database active-panel]
-   [nav-pill "Inserir dados" :update-db active-panel]
-   [nav-pill "Sincronizar Banco de Dados" :synchronize active-panel]])
+  [:div.header
+   [:ul.nav.nav-tabs
+    [nav-pill "Tabelas" :database active-panel]
+    [nav-pill "Inserir dados" :update-db active-panel]
+    [nav-pill "Sincronizar Banco de Dados" :synchronize active-panel]]])
 
 (def panels
   {:database database-panel
@@ -170,9 +172,12 @@
 ; Main Component
 ; -------------------------------------------------------------------------
 
-(defn main []
+(defn content []
   (setup!)
   (r/with-let [active-panel (subscribe [:admin.database/active-panel])]
-    [:div
-     [inner-navigation active-panel]
-     [(panels @active-panel)]]))
+    [:div.content>div.container-fluid
+     [:div.row>div.col-md-12
+      [:div.card
+       [inner-navigation active-panel]
+       [:div.content
+        [(panels @active-panel)]]]]]))

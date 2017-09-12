@@ -32,3 +32,15 @@
          crime-reports)
   (response/ok
    {:result :ok}))
+
+(defn get-crime-reports-by-crime-type [params]
+  (response/ok
+   (db/get-crime-reports-by-crime-type params)))
+
+(defn get-crime-reports-by-month [params]
+  (response/ok
+   (db/get-crime-reports-by-month params)))
+
+(defn get-crime-reports-by-period [params]
+  (response/ok
+   (db/get-crime-reports-by-period params)))

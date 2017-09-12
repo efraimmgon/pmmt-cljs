@@ -13,16 +13,32 @@
   (dispatch [:page :home]))
 
 (secretary/defroute "/admin" []
-  (dispatch [:page :admin]))
+  (dispatch [:page :admin])
+  (dispatch [:admin/set-active-panel "Dashboard" :dashboard]))
+
+(secretary/defroute "/admin/dashboard" []
+  (dispatch [:page :admin])
+  (dispatch [:admin/set-active-panel "Dashboard" :dashboard]))
+
+(secretary/defroute "/admin/database" []
+  (dispatch [:page :admin])
+  (dispatch [:admin/set-active-panel "Database" :database]))
+
+(secretary/defroute "/admin/users" []
+  (dispatch [:page :admin])
+  (dispatch [:admin/set-active-panel "Users" :users]))
+
+(secretary/defroute "/admin/geo" []
+  (dispatch [:page :admin])
+  (dispatch [:admin/set-active-panel "Georeferencing" :geo]))
+
+(secretary/defroute "/admin/report" []
+  (dispatch [:page :admin])
+  (dispatch [:admin/set-active-panel "Criminal report" :report]))
+
 
 (secretary/defroute "/utilitarios/" []
   (dispatch [:page :utilitarios]))
-
-(secretary/defroute "/analise-criminal/relatorio/" []
-  (dispatch [:page :relatorio]))
-
-(secretary/defroute "/analise-criminal/geo/" []
-  (dispatch [:page :geo]))
 
 ;; History
 ;; must be called after routes have been defined

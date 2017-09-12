@@ -1,7 +1,8 @@
-(ns pmmt.pages.geoprocessing
+(ns pmmt.pages.admin.geoprocessing
   (:require
    [clojure.string :as string]
    [reagent.core :as r :refer [atom]]
+   [reagent-forms.core :refer [bind-fields]]
    [re-frame.core :as rf :refer
     [subscribe dispatch dispatch-sync]]
    [pmmt.components.common :as c]
@@ -141,6 +142,10 @@
          {:on-click #(dispatch [:remove-modal])}
          "Cancelar"]]])))
 
+(defn geo-form-modal []
+  (r/with-let [doc (atom placeholder-values)
+               errors (atom {})]))
+
 ; ---------------------------------------------------------------------
 ; Buttons
 ; ---------------------------------------------------------------------
@@ -161,29 +166,36 @@
 ; Main Page
 ; ---------------------------------------------------------------------
 
-(def scripts
-  {#(exists? js/google) "https://maps.googleapis.com/maps/api/js?key=AIzaSyA7ekvGGHxVTwTVcpi073GOERnktqvmYz8&libraries=geometry,visualization"})
-   ;#(exists? js/StyledMarker) "/js/styledMarkers.js"
-   ;#(exists? js/oms) "/js/oms.js"})
+(defn content- [show-table?]
+  [:div.content
+   [:div.container-fluid
+    [:div.row
+     [:div.col-md-12
+      [:div.card
+       [:div.header
+        [:h4.title "Georeferencing"]
+        [:p.category "of Criminal Reports"]]
+       [:div.content
+        [map/map-outer]
+        [:br]
+        [howto-panel] [:br]
+        [:div
+         [settings-button]
+         [selection-options-button]]]]]]
+    (when @show-table?
+     [:div.row>div.col-md-12
+      [:div.card
+       [:div.content
+        [map/table]]]])]])
 
-(defn main-page []
-  (let [show-table? (subscribe [:show-table?])]
-    (dispatch-sync [:query-crimes])
-    (fn []
-      [c/js-loader
-       {:scripts scripts
-        :loading [:div.loading "Loading..."]
-        :loaded [:div.container
-                 [:div.page-header
-                  [:h1 "Georreferenciamento "
-                   [:small "de registros criminais"]]]
-                 ;; gmap
-                 [map/map-outer]
-                 [:br]
-                 [howto-panel]
-                 [:br]
-                 [:div
-                  [settings-button]
-                  [selection-options-button]]
-                 (when @show-table?
-                   [map/table])]}])))
+
+(defn content []
+  (dispatch-sync [:query-crimes])
+  (r/with-let [show-table? (subscribe [:show-table?])
+               google-api-key (subscribe [:settings/google-api-key])]
+    [c/js-loader
+     {:scripts {#(exists? js/google) (str "https://maps.googleapis.com/maps/api/js?"
+                                          "key=" @google-api-key
+                                          "&libraries=geometry,visualization")}
+      :loading [:div.loading "Loading..."]
+      :loaded [content- show-table?]}]))

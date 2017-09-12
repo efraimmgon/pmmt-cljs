@@ -42,7 +42,7 @@
            (assoc params :crimes-id (c/CRIMES-SELECTED-IDS))))]
 
     (map (fn [a b]
-           {:crime (:type a)
+           {:crime (:crime_type a)
             :a (:count a)
             :b (:count b)
             :fluctuation (c/fluctuation (:count a) (:count b))})

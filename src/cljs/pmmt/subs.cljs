@@ -32,6 +32,33 @@
 
 (reg-sub :show-table? query)
 
-(reg-sub :goog-api-key query)
-
 (reg-sub :sinop query)
+
+; -----------------------------------------------------------------------
+; Settings
+; -----------------------------------------------------------------------
+
+(reg-sub
+ :settings/page-color-palette
+ (fn [db _]
+   (get-in db [:settings :page-color-palette])))
+
+(reg-sub
+ :settings/page-background-image
+ (fn [db _]
+   (get-in db [:settings :page-background-image])))
+
+(reg-sub
+ :settings/sidebar-color-palette
+ (fn [db _]
+   (get-in db [:settings :sidebar-color-palette])))
+
+(reg-sub
+ :settings/sidebar-background-image
+ (fn [db _]
+   (get-in db [:settings :sidebar-background-image])))
+
+(reg-sub
+ :settings/google-api-key
+ (fn [db _]
+   (get-in db [:settings :google-api-key])))
