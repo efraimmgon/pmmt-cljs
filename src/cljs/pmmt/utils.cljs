@@ -1,13 +1,38 @@
 (ns pmmt.utils
   (:require [clojure.string :as string]))
 
-(defn long->date-str [n]
-  (if n
-    (let [tuple (-> (js/Date. n)
+
+(defn domap
+  "Implementation of Common Lisp `mapc`. It is like `map` except that the
+   results of applying function are not accumulated. The `colls` argument
+   is returned."
+  [f & colls]
+  (reduce (fn [_ args]
+            (apply f args))
+          nil (apply map list colls))
+  colls)
+
+(defn deep-merge-with [f & maps]
+  (apply
+    (fn m [& maps]
+      (if (every? map? maps)
+        (apply merge-with m maps)
+        (apply f maps)))
+    maps))
+
+(defn date->readable [d]
+  (if d
+    (let [tuple (-> d
                     (.toISOString)
                     (string/split "T")
                     (first)
                     (string/split "-"))]
+      (str (tuple 2) "/" (tuple 1) "/" (tuple 0)))
+    "null"))
+
+(defn long->date-str [n]
+  (if n
+    (let [tuple (date->readable (js/Date. n))]
       (str (tuple 2) "/" (tuple 1) "/" (tuple 0)))
     "null"))
 
@@ -36,3 +61,11 @@
                  6 "Sábado"
                  7 "Domingo"}]
     (get WEEKDAY (inc (.getDay d)))))
+
+(defn psql-weekday->readable [n]
+  (get ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
+       n))
+
+(defn period->readable [n]
+  (get ["Madrugada", "Matutino", "Vespertino", "Noturno"]
+       n))

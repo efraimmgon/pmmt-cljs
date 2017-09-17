@@ -2,7 +2,8 @@
   (:require [clojure.java.jdbc :as jdbc]
             [ring.util.http-response :as response]
             [pmmt.db.core :as db]
-            [pmmt.utils :refer [domap]]))
+            [pmmt.utils :refer [domap]]
+            [pmmt.routes.common :as c]))
 
 (defn str->int [s]
   (try (Integer. s)
@@ -34,13 +35,29 @@
    {:result :ok}))
 
 (defn get-crime-reports-by-crime-type [params]
-  (response/ok
-   (db/get-crime-reports-by-crime-type params)))
+  (-> params
+      (update :from c/str->java-date)
+      (update :to c/str->java-date)
+      db/get-crime-reports-by-crime-type
+      response/ok))
 
 (defn get-crime-reports-by-month [params]
-  (response/ok
-   (db/get-crime-reports-by-month params)))
+  (-> params
+      (update :from c/str->java-date)
+      (update :to c/str->java-date)
+      db/get-crime-reports-by-month
+      response/ok))
 
 (defn get-crime-reports-by-period [params]
-  (response/ok
-   (db/get-crime-reports-by-period params)))
+  (-> params
+      (update :from c/str->java-date)
+      (update :to c/str->java-date)
+      db/get-crime-reports-by-period
+      response/ok))
+
+(defn get-crime-reports-by-hour [params]
+  (-> params
+      (update :from c/str->java-date)
+      (update :to c/str->java-date)
+      db/get-crime-reports-by-hour
+      response/ok))

@@ -9,3 +9,11 @@
             (apply f args))
           nil (apply map list colls))
   colls)
+
+(defn deep-merge-with [f & maps]
+  (apply
+    (fn m [& maps]
+      (if (every? map? maps)
+        (apply merge-with m maps)
+        (apply f maps)))
+    maps))

@@ -110,37 +110,37 @@
 
 (reg-event-db
  :api/get-crime-reports-by-crime-type
- (fn [db [_ year]]
+ (fn [db [_ from to]]
    (ajax/GET "/api/crime-reports/by-crime-type"
              {:handler #(dispatch [:admin/set-crime-reports-by-crime-type %])
-              :params {:year year}
+              :params {:from from, :to to}
               :error-handler #(log %)})
    db))
 
 (reg-event-db
  :api/get-crime-reports-by-month
- (fn [db [_ year]]
+ (fn [db [_ from to]]
    (ajax/GET "/api/crime-reports/by-month"
              {:handler #(dispatch [:admin/set-crime-reports-by-month %])
-              :params {:year year}
+              :params {:from from :to to}
               :error-handler #(log %)})
    db))
 
 (reg-event-db
  :api/get-crime-reports-by-period
- (fn [db [_ year]]
+ (fn [db [_ from to]]
    (ajax/GET "/api/crime-reports/by-period"
              {:handler #(dispatch [:admin/set-crime-reports-by-period %])
-              :params {:year year}
+              :params {:from from :to to}
               :error-handler #(log %)})
    db))
 
 (reg-event-db
  :api/get-crime-reports-by-hour
- (fn [db [_ year]]
+ (fn [db [_ from to]]
    (ajax/GET "/api/crime-reports/by-hour"
              {:handler #(dispatch [:admin/set-crime-reports-by-hour %])
-              :params {:year year}
+              :params {:from from :to to}
               :error-handler #(log %)})
    db))
 
@@ -216,11 +216,10 @@
 
 (reg-event-db
  :charts/plot-pie-chart
- (fn [db [_ comp]]
-   (let [[_ data] (r/argv comp)
-         container (r/dom-node comp)
-         data {:labels (first  data)
-               :series (second data)}]
+ (fn [db [_ comp data-]]
+   (let [container (r/dom-node comp)
+         data {:labels (first  data-)
+               :series (second data-)}]
      (js/Chartist.Pie.
       container
       (clj->js data)))
@@ -228,11 +227,10 @@
 
 (reg-event-db
  :charts/plot-line-chart
- (fn [db [_ comp]]
-   (let [[_ data] (r/argv comp)
-         container (r/dom-node comp)
-         data {:labels (first  data)
-               :series (second data)}]
+ (fn [db [_ comp data-]]
+   (let [container (r/dom-node comp)
+         data {:labels (first  data-)
+               :series (second data-)}]
      (js/Chartist.Line.
       container
       (clj->js data)))
@@ -240,11 +238,10 @@
 
 (reg-event-db
  :charts/plot-bar-chart
- (fn [db [_ comp]]
-   (let [[_ data] (r/argv comp)
-         container (r/dom-node comp)
-         data {:labels (first  data)
-               :series (second data)}]
+ (fn [db [_ comp data-]]
+   (let [container (r/dom-node comp)
+         data {:labels (first  data-)
+               :series (second data-)}]
      (js/Chartist.Bar.
       container
       (clj->js data)))

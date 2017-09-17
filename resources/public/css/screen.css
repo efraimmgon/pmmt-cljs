@@ -135,3 +135,7 @@ table.sortable th:hover {
 	background-color: white;
 	color: black;
 }
+
+.checkbox input, .radio input {
+	opacity: 1 !important;
+}

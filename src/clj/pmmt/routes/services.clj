@@ -27,12 +27,6 @@
              {:date String
               :days String})
 
-(s/defschema CrimeReportsByRequest
-  {:year s/Int})
-
-(def parse-crime-reports-by-request
-  (coerce/coercer CrimeReportsByRequest coerce/json-coercion-matcher))
-
 ; ---------------------------------------------------------------------
 ; Geo
 ; ---------------------------------------------------------------------
@@ -89,10 +83,6 @@
         :summary "remove user session"
         :return Result
         (auth/logout!))
-  (GET "/send-message" req
-        :query-params [a :- String]
-        (ok (str "param: " a " // params: " (:params req))))
-
 
   (GET "/calculate-delta" []
        :summary "Calculate a time delta"
@@ -105,12 +95,7 @@
        :summary "Handle a user request and return a map response"
        :query [georeq GeoRequest]
        ; TODO: `return`
-       (geo/geo-dados georeq))
-  (GET "/analise-criminal/relatorio/dados" []
-       :summary "Handle a user request and return a map response"
-       :query [reportreq ReportRequest]
-       ; TODO: `return`
-       (report/report-data reportreq)))
+       (geo/geo-dados georeq)))
 
 (defapi restricted-service-routes
   {:swagger {:ui "/swagger-ui-private"
@@ -150,22 +135,22 @@
         :return Result
         (admin/update-crime-reports! (:body-params req)))
 
-   (GET "/crime-reports/by-crime-type" []
+   (GET "/crime-reports/by-crime-type" req
         :summary "`crime_reports` grouped by crime type, filtered by year"
-        :query [req-params CrimeReportsByRequest]
-        (admin/get-crime-reports-by-crime-type req-params))
+        (admin/get-crime-reports-by-crime-type (:params req)))
 
-   (GET "/crime-reports/by-month" []
+   (GET "/crime-reports/by-month" req
         :summary "`crime_reports` grouped by month, filtered by year"
-        :query [req-params CrimeReportsByRequest]
-        (admin/get-crime-reports-by-month req-params))
+        (admin/get-crime-reports-by-month (:params req)))
 
-   (GET "/crime-reports/by-period" []
+   (GET "/crime-reports/by-period" req
         :summary "`crime_reports` grouped by 6 hour periods (00:00 - 05:59 ...), filtered by year"
-        :query [req-params CrimeReportsByRequest]
-        (admin/get-crime-reports-by-period req-params))
+        (admin/get-crime-reports-by-period (:params req)))
 
-   (GET "/crime-reports/by-hour" []
+   (GET "/crime-reports/by-hour" req
         :summary "`crime_reports` grouped by hour, filtered by year"
-        :query [req-params CrimeReportsByRequest]
-        (ok (db/get-crime-reports-by-hour req-params)))))
+        (admin/get-crime-reports-by-hour (:params req)))
+
+   (GET "/crime-reports/statistics" req
+        :summary "Handle a user request and return a map response"
+        (report/report-data (:params req)))))

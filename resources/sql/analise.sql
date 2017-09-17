@@ -30,7 +30,7 @@ SELECT * FROM crime_reports
 SELECT * FROM crime_reports AS cr
   INNER JOIN crimes AS c
   ON cr.crime_id = c.id
-  WHERE cr.created_at BETWEEN :data-inicial AND :data-final
+  WHERE cr.created_at BETWEEN :from AND :to
 --~ (when (:neighborhood params) "AND cr.neighborhood LIKE :neighborhood")
 
 
@@ -56,28 +56,76 @@ SELECT c.type, COUNT(*) FROM crime_reports AS cr
 -- :name get-crime-reports-count :? :*
 --:doc fetch crime-reports count with usual filtering
 SELECT COUNT(*) FROM crime_reports AS cr
-  WHERE cr.created_at BETWEEN :data-inicial AND :data-final
+  WHERE cr.created_at BETWEEN :from AND :to
 --~ (when (:neighborhood params) "AND cr.neighborhood LIKE :neighborhood")
+
+
+-- :name get-crime-reports-by :? :*
+-- :doc crime_reports grouped by :field. Is filtered by :from and :to DATES
+SELECT :i:field,
+       COUNT(*) FROM crime_reports cr
+  JOIN crimes c ON cr.crime_id = c.id
+  WHERE cr.created_at BETWEEN :from AND :to
+    AND :i:field IS NOT NULL
+  GROUP BY 1
+  ORDER BY 2 DESC
+--~ (when (:limit params) "LIMIT :limit")
+
+
+-- :name get-crime-reports-by-route :? :*
+-- :doc crime_reports grouped by `route`, filtered by :from and :to DATES
+SELECT cr.route_type || ' ' || cr.route AS "route",
+       COUNT(*) FROM crime_reports cr
+  JOIN crimes c ON cr.crime_id = c.id
+  WHERE cr.created_at BETWEEN :from AND :to
+    AND cr.route IS NOT NULL
+  GROUP BY 1
+  ORDER BY 2 DESC
+--~ (when (:limit params) "LIMIT :limit")
+
+
+-- :name get-crime-reports-by-weekday :? :*
+-- :doc crime_reports grouped by weekday, filtered by :from and :to (DATES)
+SELECT EXTRACT(dow FROM created_at) AS "weekday",
+       COUNT(*)
+  FROM crime_reports cr
+  JOIN crimes c ON cr.crime_id = c.id
+  WHERE cr.created_at BETWEEN :from AND :to
+  GROUP BY 1
+  ORDER BY 1
+--~ (when (:limit params) "LIMIT :limit")
 
 
 -- :name get-crime-reports-count-by-crime
 SELECT c.type AS "crime_type",
-       COUNT(*) FROM crime_reports AS cr
+       COUNT(*)
+  FROM crime_reports AS cr
   INNER JOIN crimes AS c
   ON cr.crime_id = c.id
-  WHERE cr.created_at BETWEEN :data-inicial AND :data-final
+  WHERE cr.created_at BETWEEN :from AND :to
   AND cr.crime_id IN :tuple:crimes-id
 --~ (when (:neighborhood params) "AND cr.neighborhood LIKE :neighborhood")
   GROUP BY c.type ORDER BY c.type DESC
 
 
 -- :name get-crime-reports-by-crime-type :? :*
--- :doc crime_reports grouped by crime type.
-SELECT c.type AS "crime_type",
-       COUNT(*) FROM crime_reports cr
+-- :doc crime_reports grouped by crime type; filtered by :from and :to DATES
+SELECT c.type AS "crime-type",
+       COUNT(*)
+  FROM crime_reports cr
   JOIN crimes c ON cr.crime_id = c.id
-  WHERE EXTRACT(year FROM created_at) = :year
-  GROUP BY c.type
+  WHERE cr.created_at BETWEEN :from AND :to
+  GROUP BY 1
+  ORDER BY 2 DESC
+
+-- :name get-crime-reports-by-neighborhood :? :*
+-- :doc crime_reports grouped by neighborhood; filtered by :from and :to DATES
+SELECT c.neighborhood
+       COUNT(*)
+  FROM crime_reports cr
+  JOIN crimes c ON cr.crime_id = c.id
+  WHERE cr.created_at BETWEEN :from AND :to
+  GROUP BY 1
   ORDER BY 2 DESC
 
 
@@ -86,26 +134,39 @@ SELECT c.type AS "crime_type",
 SELECT DATE_TRUNC('month', created_at) as month,
        COUNT(*)
   FROM crime_reports cr
-  WHERE EXTRACT(year FROM created_at) = :year
+  WHERE cr.created_at BETWEEN :from AND :to
   GROUP BY 1
   ORDER BY 1
 
+
 -- :name get-crime-reports-by-period
--- :doc crime_reports grouped by 6 hour periods (00:00 - 05:59 ...)
-SELECT TRUNC(EXTRACT(hour FROM created_on) / 6) AS "period",
-  COUNT(*)
-  FROM crime_reports
-  WHERE created_on IS NOT NULL
-    AND EXTRACT(year FROM created_at) = :year
+-- :doc crime_reports grouped by 6 hour periods (00:00 - 05:59 ...),
+-- filtered by :from and :to (DATES)
+SELECT TRUNC(EXTRACT(hour FROM cr.created_on) / 6) AS "period",
+       COUNT(*)
+  FROM crime_reports cr
+  WHERE cr.created_on IS NOT NULL
+    AND cr.created_at BETWEEN :from AND :to
   GROUP BY 1
   ORDER BY 1
+
 
 -- :name get-crime-reports-by-hour
 -- :doc crime_reports grouped by hour
-SELECT EXTRACT(hour FROM created_on) AS "hour",
+SELECT EXTRACT(hour FROM cr.created_on) AS "hour",
        COUNT(*)
-  FROM crime_reports
-  WHERE created_on IS NOT NULL
-    AND EXTRACT(year FROM created_at) = :year
+  FROM crime_reports cr
+  WHERE cr.created_on IS NOT NULL
+    AND cr.created_at BETWEEN :from AND :to
+  GROUP BY 1
+  ORDER BY 1
+
+
+-- :name get-crime-reports-by-date
+-- :doc crime_reports grouped by `created_at`, filtered by :from and :to (DATES)
+SELECT cr.created_at AS "created-at",
+       COUNT(*)
+  FROM crime_reports cr
+  WHERE cr.created_at BETWEEN :from AND :to
   GROUP BY 1
   ORDER BY 1

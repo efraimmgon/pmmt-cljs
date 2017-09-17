@@ -3,9 +3,14 @@
             [clojure.string :as string]
             [ring.util.http-response :as response]
             [pmmt.routes.common :as c]
-            [pmmt.db.core :as db :refer [*db*]]))
+            [pmmt.db.core :as db :refer [*db*]]
+            [pmmt.utils :refer [deep-merge-with]]))
 
 ; helpers -------------------------------------------------------------
+
+(defn format-date [m]
+  (-> (str (:day m) "/" (:month m) "/" (:year m))
+      (c/str->java-date)))
 
 (defn in? [coll obj]
   (some #(= obj %) coll))
@@ -21,10 +26,10 @@
   (let [like-fn (fn [s] (and s (str "%" (c/NFKD s) "%")))
         str->coll (fn [s] (and s (clojure.edn/read-string s)))]
     (-> params
-        (update :data-inicial-a c/str->java-date)
-        (update :data-final-a c/str->java-date)
-        (update :data-inicial-b c/str->java-date)
-        (update :data-final-b c/str->java-date)
+        (update-in [:range1 :from] format-date)
+        (update-in [:range1 :to] format-date)
+        (update-in [:range2 :from] format-date)
+        (update-in [:range2 :to] format-date)
         (update :roubo #(when % (map :id (c/ROUBO))))
         (update :furto #(when % (map :id (c/FURTO))))
         (update :trafico #(when % (map :id (c/TRAFICO))))
@@ -55,18 +60,18 @@
   Returns => [[key s/Any val s/Any]]"
   ([coll field] (select-distinct coll field 5))
   ([coll field limit]
-   (let [result (reduce (fn [acc row]
-                           (let [val (field row)]
-                             (if (get acc val)
-                               (update acc val inc)
-                               (assoc acc val 1))))
-                        {} coll)]
+   (let [acc (reduce (fn [acc row]
+                       (let [val (field row)]
+                         (if (get acc val)
+                           (update acc val inc)
+                           (assoc acc val 1))))
+                     {} coll)]
      (if limit
-       (try (subvec (vec (sort-by val > result)) 0 limit)
-         ;; if result is less than limit we can't subvec it
+       (try (subvec (vec (sort-by val > acc)) 0 limit)
+         ;; if acc is less than limit we can't subvec it
          (catch java.lang.IndexOutOfBoundsException e
-           (sort-by val > result)))
-       (sort-by val > result)))))
+           (sort-by val > acc)))
+       (sort-by val > acc)))))
 
 (defn select-distinct-weekdays [coll]
   (reduce (fn [acc [long-date count]]
@@ -170,14 +175,58 @@
            ; return the same weekday-reports of each queryset together
            (vec weekdays-reports-a) (vec weekdays-reports-b)))))
 
-(defn process-report-data
-  [{:keys [data-inicial-a data-final-a data-inicial-b data-final-b] :as params}]
-  (let [params-a {:data-inicial data-inicial-a
-                  :data-final data-final-a}
-        params-b {:data-inicial data-inicial-b
-                  :data-final data-final-b}
-        [count-a count-b] (map #(first (db/get-crime-reports-count %)) [params-a params-b])
-        [period-a period-b] (map db/get-crime-reports [params-a params-b])
+(defn detailed-statistics [date-range params]
+  {:crime-reports
+   {:detailed nil}})
+; For now this will be nil.
+; I still have to think of a better way of generating this data.
+; {:detailed
+;  {:by-crime-type,
+;   :by-weekday,
+;   :by-period,
+;   :by-neighborhood}}
+
+(defn process-range [date-range params]
+  (when date-range
+    (deep-merge-with
+      merge
+      date-range
+      ;; Regular statistics
+      {:crime-reports
+       {:count
+        (-> (db/get-crime-reports-count date-range) first :count),
+        :by-crime-type
+        (db/get-crime-reports-by
+         (assoc date-range :field "c.type" :limit 10)),
+        :by-neighborhood
+        (db/get-crime-reports-by
+         (assoc date-range :field "cr.neighborhood" :limit 10)),
+        :by-weekday
+        (db/get-crime-reports-by-weekday date-range),
+        :by-route
+        (db/get-crime-reports-by-route
+         (assoc date-range :limit 10)),
+        :by-period
+        (db/get-crime-reports-by-period date-range),
+        :by-date
+        (db/get-crime-reports-by-date date-range)
+        :by-hour
+        (db/get-crime-reports-by-hour date-range)}}
+      ;; Optional statistics
+      (detailed-statistics date-range params))))
+
+(defn process-report-data [params]
+  (let [range1 (process-range (:range1 params) params)
+        range2 (when-let [range2 (:range2 params)]
+                 (process-range range2 params))]
+        ;comparison]
+    {:ranges [range1 range2]}))
+
+
+(defn process-report-data-
+  [{:keys [range1 range2 data-inicial-b data-final-b] :as params}]
+  (let [[count-a count-b] (map #(first (db/get-crime-reports-count %)) [range1 range2])
+        [period-a period-b] (map db/get-crime-reports [range1 range2])
         [distinct-fields-a distinct-fields-b]
         (map select-distinct-fields [period-a period-b])
         ; plots
@@ -204,8 +253,8 @@
     {:total {:a (:count count-a)
              :b (:count count-b)
              :fluctuation (c/fluctuation (:count count-a) (:count count-b))}
-     :crime-comparison (compare-incidents params-a params-b)
-     :plots {:bar {:ids (keys distinct-fields-a)
+     :crime-comparison (compare-incidents range1 range2)
+     :plots {:bar {:ids (map name (keys distinct-fields-a))
                    :vals {:a (map format-plot-bar-data
                                (repeat "Período A")
                                (keys distinct-fields-a)
@@ -224,6 +273,7 @@
 ; response handler ----------------------------------------------------------
 
 (defn report-data [params]
+
   (response/ok
    (-> params
        (report-db-coercer)

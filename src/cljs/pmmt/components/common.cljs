@@ -2,7 +2,8 @@
   (:require
    [dommy.core :as dommy :refer-macros [sel sel1]]
    [goog.net.jsloader :as jsl]
-   [reagent.core :as r :refer [atom]]))
+   [reagent.core :as r :refer [atom]]
+   [re-frame.core :refer [dispatch]]))
 
 ; --------------------------------------------------------------------
 ; MISC
@@ -22,6 +23,28 @@
 (defn display-error [errors id]
   (when-let [error (id @errors)]
     [:div.alert.alert-danger (clojure.string/join error)]))
+
+(defn card [{:keys [title subtitle content footer]}]
+  [:div.card
+   [:div.header
+    [:h4.title title]
+    (when subtitle
+      [:p.category subtitle])]
+   [:div.content
+    content]
+   (when footer
+     [:div.footer footer])])
+
+(defn chart [{:keys [display-name chart-type data]}]
+  (r/create-class
+   {:display-name display-name
+    :reagent-render
+    (fn [] [:div.ct-chart])
+    :component-did-mount
+    (condp = chart-type
+           "pie" #(dispatch [:charts/plot-pie-chart % data])
+           "line" #(dispatch [:charts/plot-line-chart % data])
+           "bar" #(dispatch [:charts/plot-bar-chart % data]))}))
 
 ; --------------------------------------------------------------------
 ; BUTTON
@@ -159,18 +182,19 @@
 (defn thead [headers]
   [:thead
    [:tr
-    (for [h headers]
-      ^{:key h}
-      [:th h])]])
+    (for [th headers]
+      ^{:key th}
+      [:th.text-center th])]])
 
 (defn tbody [rows]
-  [:tbody
+  (into
+   [:tbody]
    (for [row rows]
-     ^{:key row}
-     [:tr
-      (for [k (keys row)]
-        ^{:key k}
-        [:td (k row)])])])
+     (into
+      [:tr]
+      (for [td row]
+        [:td.text-center
+         td])))))
 
 ; --------------------------------------------------------------
 ; DOM Manipulation

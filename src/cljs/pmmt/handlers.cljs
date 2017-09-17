@@ -8,16 +8,8 @@
             pmmt.handlers.geoprocessing
             pmmt.handlers.login
             pmmt.handlers.report
-            pmmt.handlers.utils))
-
-
-(defn deep-merge-with [f & maps]
-  (apply
-    (fn m [& maps]
-      (if (every? map? maps)
-        (apply merge-with m maps)
-        (apply f maps)))
-    maps))
+            pmmt.handlers.utils
+            [pmmt.utils :refer [deep-merge-with]]))
 
 ; Custom Coeffects ----------------------------------------------------
 

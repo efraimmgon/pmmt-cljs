@@ -13,6 +13,7 @@
 
 ;;; Date conversions
 ; from string
+
 (defn joda->java-date [date]
   (tc/to-date date))
 

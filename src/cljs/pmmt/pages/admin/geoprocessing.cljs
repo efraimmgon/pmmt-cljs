@@ -142,10 +142,6 @@
          {:on-click #(dispatch [:remove-modal])}
          "Cancelar"]]])))
 
-(defn geo-form-modal []
-  (r/with-let [doc (atom placeholder-values)
-               errors (atom {})]))
-
 ; ---------------------------------------------------------------------
 ; Buttons
 ; ---------------------------------------------------------------------
