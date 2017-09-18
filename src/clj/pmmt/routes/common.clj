@@ -103,18 +103,12 @@
    string
    java.text.Normalizer$Form/NFKD))
 
-(defn fluctuation
-  "Calculate variation relative from b to a; if a < b, fluctuation means
-  increase, else if a > b, fluctuation means decrease."
-  [a b]
-  (letfn [(calculate [a b]
-                     (if (= b 0)
-                       0
-                       (-> (- a b) (-) (/ b) (* 100) (double) (Math/round))))]
-    (if (< a b)
-      (calculate a b)
-      (calculate b a))))
-
+(defn percentage-increase [old new]
+  (Math/round
+   (double
+     (-> (- new old)
+         (/ old)
+         (* 100)))))
 
 ; -------------------------------------------------------------------------
 ; Global vars

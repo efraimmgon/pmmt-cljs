@@ -1,8 +1,5 @@
 (ns pmmt.pages.admin.report
-  (:require-macros
-   [reagent.ratom :refer [reaction]])
   (:require
-   [clojure.string :as string]
    [reagent.core :as r :refer [atom]]
    [reagent-forms.core :refer [bind-fields]]
    [re-frame.core :as re-frame :refer
@@ -12,104 +9,8 @@
    [pmmt.utils :as utils :refer [date->readable]]))
 
 ; ------------------------------------------------------------------------
-; Components
+; Form
 ; ------------------------------------------------------------------------
-
-; General Components -----------------------------------------------------
-
-(defn preppend-text-rules [k row]
-  (when (= k :fluctuation)
-    (if (< (:a row) (:b row))
-      "+ "
-      "- ")))
-
-(defn append-text-rules [k]
-  (when (= k :fluctuation) "%"))
-
-(defn class-rules [row]
-  (when (:fluctuation row)
-    (if (< (:a row) (:b row))
-      "bg-danger"
-      "bg-success")))
-; rows => coll of rows; keyz => keys that access each row's field
-; I should probably implement `keyz` as an optional field, which
-; defaults to a range of the row's count
-(defn tbody- [rows keyz]
-  (into
-    [:tbody]
-    (for [row rows]
-      ^{:key row}
-      (into
-       [:tr]
-       (for [k keyz]
-         ^{:key k}
-         (let [preppended-text (preppend-text-rules k row)
-               appended-text (append-text-rules k)
-               class (class-rules row)]
-           [:td.text-center {:class class}
-            (str preppended-text (get row k) appended-text)]))))))
-
-(defn panel-with-table [title {:keys [headers rows keyz]}]
-  [:div.panel.panel-default
-   [:div.panel-heading [:h3.text-center title]]
-   [:table.table.table-bordered.table-striped
-    [thead headers]
-    [tbody- rows keyz]]])
-
-(defn panel-with-body [title body]
-  [:div.panel.panel-default
-   [:div.panel-heading [:h3.text-center title]]
-   [:div.panel-body
-    body]])
-
-; Plotly components -------------------------------------------------------
-
-(defn plotly-render [id]
-  [panel-with-body
-   (str "Comparação de " id)
-   [:div {:id (str "id_" id "_graph")
-          :style {:width "100%" :height "400px"}}]])
-
-;; Note: we don't access the `values` parameter directly; we get it
-;; later on by calling `r/argv` on the component
-(defn plotly-component-bar [id values]
-  (r/create-class {:display-name "plotly-component-bar"
-                   :reagent-render #(plotly-render id)
-                   :component-did-mount #(dispatch [:update-bar-plot %])
-                   :component-did-update #(dispatch [:update-bar-plot %])}))
-
-(defn plotly-component-pie [id values]
-  (r/create-class {:display-name "plotly-component-bar"
-                   :reagent-render #(plotly-render id)
-                   :component-did-mount #(dispatch [:update-pie-plot %])
-                   :component-did-update #(dispatch [:update-pie-plot %])}))
-
-(defn plot-comparison []
-  (let [plot-data (subscribe [:plot-data])
-        ;;; ids and values for plots
-        ; bar
-        bar-vals (reaction (get-in @plot-data [:bar :vals]))
-        ids-bar (reaction (get-in @plot-data [:bar :ids]))
-        ; pie
-        pie-vals (reaction (get-in @plot-data [:pie :vals]))
-        ids-pie (reaction (get-in @plot-data [:pie :ids]))]
-    (fn []
-      [:div
-        (into [:div]
-         (map (fn [id a-values b-values]
-                ^{:key (str "bar-" id)}
-                [plotly-component-bar id [a-values b-values]])
-              @ids-bar
-              (:a @bar-vals)
-              (:b @bar-vals)))
-       (into [:div]
-        (map (fn [id values]
-               ^{:key (str "pie-" id)}
-               [plotly-component-pie id values])
-             @ids-pie
-             [(:a @pie-vals) (:b @pie-vals)]))])))
-
-; Main components -------------------------------------------------------
 
 (defn periodo-template [legend id-start id-end]
   [:fieldset
@@ -220,89 +121,9 @@
        {:on-click #(dispatch [:remove-modal])}
        "Cancelar"]]]))
 
-(defn result-header [params]
-  (into
-   [:div.row]
-   (map (fn [period [start end]]
-          ^{:key period}
-          [:div.col-md-6
-           [:div.panel.panel-primary
-            [:panel-heading
-             [:h2.text-center
-               period [:br]
-               (str start " a " end)]]]])
-        ["Período 1:", "Período 2:"]
-        [[(get-in @params [:range1 :from]), (get-in @params [:range1 :to])]
-         [(get-in @params [:range2 :from]), (get-in @params [:range2 :to])]])))
-
-
-(defn optionals-result-panels []
-  (let [optionals (subscribe [:optionals-result])]
-    (fn []
-      (into [:div]
-        (for [option @optionals]
-          ^{:key option}
-          (for [[opt-key values] (vec option)]
-            (into
-             ^{:key opt-key}
-              [:div.row
-               [:h2.text-center (str "Análise: " (string/capitalize (name opt-key)))]]
-              (for [[_ distinct-values] (vec values)]
-                ^{:key distinct-values}
-                (into
-                  [:div.col-md-6]
-                  (for [[field rows] distinct-values]
-                    ^{:key field}
-                    [panel-with-table
-                     (string/capitalize (name field))
-                     {:headers (list (string/capitalize (name field)) "Registros")
-                      :rows rows
-                      :keyz (range 2)}]))))))))))
-
-(defn result-panel- []
-  (let [;; sanity check
-        params (subscribe [:get-db :report-params])
-        ;; result from data crunching, after submission
-        result (subscribe [:get-db :report])]
-    (fn []
-      (when @result
-        [:div
-         ;; sanity check
-         [result-header params]
-         [panel-with-table
-          "Total de ocorrências registradas"
-          {:headers ["Período A", "Período B", "Variação"]
-           :rows (list (get-in @result [:total]))
-           :keyz (keys (get-in @result [:total]))}]
-         [panel-with-table
-          "Variação de registros por natureza"
-          {:headers (list "Natureza" "Período A" "Período B" "Variação")
-           :rows (get-in @result [:crime-comparison])
-           :keyz (keys (first (get-in @result [:crime-comparison])))}]
-         [plot-comparison]
-         (when (:optionals @result)
-           [optionals-result-panels])]))))
-
-(defn pretty-display [title data]
-  [:div
-   [:h3 title]
-   [:pre
-    (with-out-str
-     (cljs.pprint/pprint @data))]])
-
-(defn table-statistics-template [{:keys [title subtitle headers rows]}]
-  [:div.row
-   [:div.col-md-12
-    [card {:title title
-           :subtitle subtitle
-           :content [:table.table.table-bordered.table-striped
-                     [thead headers]
-                     [tbody rows]]}]]])
-
-(defn one-value-template [params]
-  [:div.row
-   [:div.col-md-12
-    [card params]]])
+; ------------------------------------------------------------------------
+; Result
+; ------------------------------------------------------------------------
 
 ; For the sake of simplicity I'll start by displaying only the values,
 ; leaving the charts for latter
@@ -311,7 +132,12 @@
 ; followed by the data. If the data is an int, we only display it, if
 ; it's a vector, we will use a table for this displayal
 
-(defn single-template []
+(defn composite-range []
+  (r/with-let [statistics (subscribe [:report/statistics])]
+    [:div
+     (get-in @statistics [:compare :count])]))
+
+(defn single-range []
   (r/with-let [statistics (subscribe [:report.single/statistics])
                by-crime-type (subscribe [:report.single/by-crime-type])
                by-neighborhood (subscribe [:report.single/by-neighborhood])
@@ -322,7 +148,7 @@
                by-date (subscribe [:report.single/by-date])]
     [:div
      ; count
-     [one-value-template
+     [card
       {:title "Total de registros", :content (:count @statistics)}]
      ; by crime type
      [card
@@ -451,7 +277,9 @@
       [:div
        [heading-template statistics]
        (if (= 1 (count @params))
-         [single-template])])))
+         [single-range]
+         [composite-range])
+       [c/pretty-display "statistics" statistics]])))
 
 
 (defn report-button []
@@ -464,22 +292,14 @@
 ; Main Page
 ; ---------------------------------------------------------------------
 
-(defn inner-content []
-  [:div.content
-   [:div.container-fluid
-    [:div.row
-     [:div.col-md-12
-      [card {:title "Relatório de Análise Criminal"
-             :content [:div
-                       [report-button]
-                       [:hr]
-                       [statistics-template]]}]]]]])
-
 (defn content []
   (dispatch-sync [:query-crimes])
   (fn []
-    [c/js-loader
-     ;; TODO: replace plotly by chartist
-     {:scripts {#(exists? js/Plotly) "https://cdn.plot.ly/plotly-latest.min.js"}
-      :loading [:div.loading "Loading..."]
-      :loaded [inner-content]}]))
+    [:div.content
+
+     [card {:title "Relatório de Análise Criminal"
+            :content
+            [:div
+             [report-button]
+             [:hr]
+             [statistics-template]]}]]))

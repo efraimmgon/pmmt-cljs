@@ -6,6 +6,17 @@
    [re-frame.core :refer [dispatch]]))
 
 ; --------------------------------------------------------------------
+; Debugging
+; --------------------------------------------------------------------
+
+(defn pretty-display [title data]
+  [:div
+   [:h3 title]
+   [:pre
+    (with-out-str
+     (cljs.pprint/pprint @data))]])
+
+; --------------------------------------------------------------------
 ; MISC
 ; --------------------------------------------------------------------
 
@@ -35,16 +46,24 @@
    (when footer
      [:div.footer footer])])
 
+
+; --------------------------------------------------------------------
+; Charts
+; --------------------------------------------------------------------
+
 (defn chart [{:keys [display-name chart-type data]}]
-  (r/create-class
-   {:display-name display-name
-    :reagent-render
-    (fn [] [:div.ct-chart])
-    :component-did-mount
-    (condp = chart-type
-           "pie" #(dispatch [:charts/plot-pie-chart % data])
-           "line" #(dispatch [:charts/plot-line-chart % data])
-           "bar" #(dispatch [:charts/plot-bar-chart % data]))}))
+  (r/with-let [chart-type-dispatch
+               (condp = chart-type
+                      "pie" #(dispatch [:charts/plot-pie-chart % data])
+                      "line" #(dispatch [:charts/plot-line-chart % data])
+                      "bar" #(dispatch [:charts/plot-bar-chart % data]))]
+    (r/create-class
+     {:display-name display-name
+      :reagent-render
+      (fn [] [:div.ct-chart])
+      :component-did-mount chart-type-dispatch
+      :component-did-update chart-type-dispatch})))
+
 
 ; --------------------------------------------------------------------
 ; BUTTON
