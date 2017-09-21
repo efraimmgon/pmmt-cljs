@@ -2,7 +2,7 @@
   (:require-macros
    [pmmt.macros :refer [log]])
   (:require
-   [clojure.string :refer [capitalize]]
+   [clojure.string :as string :refer [capitalize]]
    [ajax.core :as ajax]
    [reagent.core :as r :refer [atom]]
    [re-frame.core :refer [dispatch reg-event-db reg-event-fx reg-sub subscribe]]
@@ -24,6 +24,8 @@
  :report/statistics
  (fn [db _]
    (get-in db [:report :statistics])))
+
+; Single Statistics ------------------------------------------------------
 
 (reg-sub
  :report.single/statistics
@@ -87,6 +89,79 @@
    (map (juxt (comp utils/date->readable :created-at) :count)
         (:by-date statistics))))
 
+; Composite Statistics -------------------------------------------------
+
+(reg-sub
+ :report.compare/count
+ (fn [query-v _]
+   (subscribe [:report/statistics]))
+ (fn [statistics]
+   (vector
+     ((juxt :old :new :increase)
+      (get-in statistics [:compare :count])))))
+
+(reg-sub
+ :report.compare/by-crime-type
+ (fn [query-v _]
+   (subscribe [:report/statistics]))
+ (fn [statistics]
+   (map (juxt :type :old :new :increase)
+        (get-in statistics [:compare :by-crime-type]))))
+
+(reg-sub
+ :report.composite/by-neighborhood
+ (fn [query-v _]
+   (subscribe [:report/statistics]))
+ (fn [statistics]
+   (->> (:ranges statistics)
+        (map #(get-in % [:crime-reports :by-neighborhood]))
+        (map #(map (juxt :neighborhood :count) %)))))
+
+(reg-sub
+ :report.compare/by-weekday
+ (fn [query-v _]
+   (subscribe [:report/statistics]))
+ (fn [statistics]
+   (map (juxt (comp utils/psql-weekday->readable :weekday)
+              :old :new :increase)
+        (get-in statistics [:compare :by-weekday]))))
+
+(reg-sub
+ :report.composite/by-route
+ (fn [query-v _]
+   (subscribe [:report/statistics]))
+ (fn [statistics]
+   (->> (:ranges statistics)
+        (map #(get-in % [:crime-reports :by-route]))
+        (map #(map (juxt :route :count) %)))))
+
+(reg-sub
+ :report.compare/by-period
+ (fn [query-v _]
+   (subscribe [:report/statistics]))
+ (fn [statistics]
+   (map (juxt (comp utils/period->readable :period)
+              :old :new :increase)
+        (get-in statistics [:compare :by-period]))))
+
+(reg-sub
+ :report.composite/by-hour
+ (fn [query-v _]
+   (subscribe [:report/statistics]))
+ (fn [statistics]
+   (->> (:ranges statistics)
+        (map #(get-in % [:crime-reports :by-hour]))
+        (map #(map (juxt :hour :count) %)))))
+
+(reg-sub
+ :report.composite/by-date
+ (fn [query-v _]
+   (subscribe [:report/statistics]))
+ (fn [statistics]
+   (->> (:ranges statistics)
+        (map #(get-in % [:crime-reports :by-date]))
+        (map #(map (juxt (comp utils/date->readable :created-at)
+                         :count) %)))))
 
 ; Charts ---------------------------------------------------------------
 

@@ -1,5 +1,6 @@
 (ns pmmt.routes.report
   (:require
+    [clojure.string :as string]
     [ring.util.http-response :as response]
     [pmmt.routes.common :as c]
     [pmmt.db.core :as db]
@@ -39,28 +40,66 @@
 ;   :by-period,
 ;   :by-neighborhood}}
 
-(defn compare-fields [range1 range2 field key]
-  (map (fn [m1 m2]
-         {key (key m1)
-          :old (:count m1)
-          :new (:count m2)
-          :increase (c/percentage-increase
-                      (get m1 :count)
-                      (get m2 :count))})
-       (get-in range1 [:crime-reports field])
-       (get-in range2 [:crime-reports field])))
+(defn compare-fields [field key & ranges]
+  (apply
+    map
+    (fn [m1 m2]
+      {key (key m1)
+        :old (:count m1)
+        :new (:count m2)
+        :increase (c/percentage-increase
+                    (get m1 :count)
+                    (get m2 :count))})
+    (map #(get-in % [:crime-reports field]) ranges)))
+
+(defn compare-data [key & data]
+  (apply
+    map
+    (fn [m1 m2]
+      {key (key m1)
+       :old (:count m1)
+       :new (:count m2)
+       :increase (c/percentage-increase
+                   (get m1 :count)
+                   (get m2 :count))})
+    data))
+
+(defn crime-groups [m]
+  (cond
+    (string/includes? (:type m) "ROUBO") "ROUBO"
+    (string/includes? (:type m) "FURTO") "FURTO"
+    (string/includes? (:type m) "HOMICIDIO") "HOMICIDIO"
+    (string/includes? (:type m) "TRAFICO") "TRAFICO"
+    (string/includes? (:type m) "DROGAS") "DROGAS"))
+
+(defn group-crimes [& rows]
+  (for [row rows]
+    (map second
+         (reduce (fn [acc m]
+                   (if-let [key (crime-groups m)]
+                     (if (get m key)
+                       (update-in acc [key :count] + (:count m))
+                       (assoc acc key {:type key :count (:count m)}))
+                     acc))
+                 {} row))))
 
 (defn compare [range1 range2]
-  {:count
-   (c/percentage-increase
-     (get-in range1 [:crime-reports :count])
-     (get-in range2 [:crime-reports :count])),
-   :by-crime-type
-   (compare-fields range1 range2 :by-crime-type :type),
-   :by-weekday
-   (compare-fields range1 range2 :by-weekday :weekday),
-   :by-period
-   (compare-fields range1 range2 :by-period :period)})
+  (let [ranges (map #(get-in % [:crime-reports :by-crime-type]) [range1 range2])]
+    {:count
+     {:old (get-in range1 [:crime-reports :count])
+      :new (get-in range2 [:crime-reports :count])
+      :increase (c/percentage-increase
+                  (get-in range1 [:crime-reports :count])
+                  (get-in range2 [:crime-reports :count]))},
+     :by-crime-type
+     (apply compare-data :type
+            (apply group-crimes
+                   (map #(get-in % [:crime-reports :by-crime-type]) [range1 range2])))
+
+     :by-weekday
+     (compare-fields :by-weekday :weekday range1 range2),
+     :by-period
+     (compare-fields :by-period :period range1 range2)}))
 
 (defn process-range [date-range params]
   (when date-range

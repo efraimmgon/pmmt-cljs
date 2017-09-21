@@ -104,11 +104,13 @@
    java.text.Normalizer$Form/NFKD))
 
 (defn percentage-increase [old new]
-  (Math/round
-   (double
-     (-> (- new old)
-         (/ old)
-         (* 100)))))
+  (if (zero? old)
+    "infinity"
+    (Math/round
+     (double
+       (-> (- new old)
+           (/ old)
+           (* 100))))))
 
 ; -------------------------------------------------------------------------
 ; Global vars

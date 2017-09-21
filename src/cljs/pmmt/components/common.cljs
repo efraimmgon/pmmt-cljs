@@ -214,6 +214,29 @@
       (for [td row]
         [:td.text-center
          td])))))
+(defn thead-indexed
+  "Coupled with `tbody-indexed`, allocates a col for the row's index."
+  [headers]
+  [:thead
+   (into
+     [:tr
+      [:th.text-center "Ord."]]
+     (for [th headers]
+       [:th.text-center th]))])
+
+(defn tbody-indexed
+  "Coupled with `thead-indexed`, allocates a col for the row's index."
+  [rows]
+  (into
+   [:tbody]
+   (map-indexed
+    (fn [i row]
+      (into
+       [:tr [:td.text-center (inc i)]]
+       (for [td row]
+         [:td.text-center
+          td])))
+    rows)))
 
 ; --------------------------------------------------------------
 ; DOM Manipulation

@@ -5,7 +5,7 @@
    [re-frame.core :as re-frame :refer
     [subscribe dispatch dispatch-sync]]
    [pmmt.components.common :as c :refer
-    [card thead tbody chart]]
+    [card thead tbody chart thead-indexed tbody-indexed]]
    [pmmt.utils :as utils :refer [date->readable]]))
 
 ; ------------------------------------------------------------------------
@@ -125,19 +125,145 @@
 ; Result
 ; ------------------------------------------------------------------------
 
-; For the sake of simplicity I'll start by displaying only the values,
-; leaving the charts for latter
-; The basic template is the card.
-; All categories will have a title, which states what the data represents,
-; followed by the data. If the data is an int, we only display it, if
-; it's a vector, we will use a table for this displayal
-
 (defn composite-range []
-  (r/with-let [statistics (subscribe [:report/statistics])]
+  "Template for composite-range queries responses."
+  (r/with-let [statistics (subscribe [:report/statistics])
+               count-stats (subscribe [:report.compare/count])
+               by-crime-type (subscribe [:report.compare/by-crime-type])
+               by-neighborhood (subscribe [:report.composite/by-neighborhood])
+               by-weekday (subscribe [:report.compare/by-weekday])
+               by-route (subscribe [:report.composite/by-route])
+               by-period (subscribe [:report.compare/by-period])
+               by-hour (subscribe [:report.composite/by-hour])
+               by-date (subscribe [:report.composite/by-date])]
     [:div
-     (get-in @statistics [:compare :count])]))
+     ; count (comparison)
+     [card
+      {:title "Total de registros"
+       :content
+       [:div.row
+        [:div.col-md-12
+         [:table.table.table-bordered.table-striped
+          [thead ["Registros 1", "Registros 2", "Variação"]]
+          [tbody @count-stats]]]]}]
+     ; by crime type (comparison)
+     [card
+      {:title "Por natureza"
+       :subtitle "Registros"
+       :content
+       [:div
+        [:div.row
+         [:div.col-md-12
+          [:table.table.table-bordered.table-striped
+           [thead-indexed ["Natureza", "Registros 1", "Registros 2", "Variação"]]
+           [tbody-indexed @by-crime-type]]]]
+        [:div.row
+         [:div.col-md-6
+          [chart
+           {:display-name "chart-report-composite-by-crime-type-1"
+            :chart-type "pie"
+            :data [(range 1 (inc (count @by-crime-type)))
+                   (map second @by-crime-type)]}]]
+         [:div.col-md-6
+          [chart
+           {:display-name "chart-report-composite-by-crime-type-2"
+            :chart-type "pie"
+            :data [(range 1 (inc (count @by-crime-type)))
+                   (map #(get % 2) @by-crime-type)]}]]]]}]
+     ; by neighborhood (chart only)
+     [card
+      {:title "Por bairro"
+       :subtitle "Registros"
+       :content
+       (into
+         [:div.row]
+         (for [rows @by-neighborhood]
+           [:div.col-md-12
+            [chart
+             {:chart-type "bar"
+              :data [(map first rows)
+                     [(map second rows)]]}]]))}]
+     ; by weekday (comparison)
+     [card
+      {:title "Por dia da semana"
+       :subtitle "Registros"
+       :content
+       [:div
+        [:div.row
+         [:div.col-md-6
+          [:table.table.table-bordered.table-striped
+           [thead ["Dia da semana", "Registros 1" "Registros 2" "Variação"]]
+           [tbody @by-weekday]]]
+         [:div.col-md-6
+          [chart
+           {:display-name "chart-report-composite-by-weekday"
+            :chart-type "bar"
+            :data [(map first @by-weekday)
+                   [(map second @by-weekday)
+                    (map #(get % 2) @by-weekday)]]}]]]]}]
+     ; by route
+     [card
+      {:title "Por via"
+       :subtitle "Registros"
+       :content
+       (into
+         [:div.row]
+         (for [rows @by-route]
+           [:div.col-md-12
+            [chart
+             {:chart-type "bar"
+              :data [(map first rows)
+                     [(map second rows)]]}]]))}]
+     ; by period (comparison)
+     [card
+      {:title "Por período"
+       :subtitle "Registros"
+       :content
+       [:div.row
+        [:div.col-md-6
+         [:table.table.table-bordered.table-striped
+          [thead ["Período", "Registros 1" "Registros 2" "Variação"]]
+          [tbody @by-period]]]
+        [:div.col-md-6
+         [chart
+          {:display-name "chart-report-composite-by-period"
+           :chart-type "line"
+           :data [(map first @by-period)
+                  [(map second @by-period)
+                   (map #(get % 2) @by-period)]]}]]]}]
+     ; by hour
+     [card
+      {:title "Registros"
+       :subtitle "Por hora"
+       :content
+       [:div.row
+        [:div.col-md-12
+         [chart
+          {:display-name "chart-report-composite-by-hour"
+           :chart-type "line"
+           :data [(map first (first @by-hour))
+                  (map #(map second %) @by-hour)]}]]]}]
+     ; by date
+     [card
+      {:title "Registros"
+       :subtitle "Por data"
+       :content
+       [:div.row
+        [:div.col-md-12
+         [chart
+          {:display-name "chart-report-single-by-date"
+           :chart-type "line"
+           :data [(range 1 (inc (count (first @by-date))))
+                  (map #(map second %) @by-date)]}]]]
+       :footer
+       [:div.legend
+        [:p "* Datas substituídas pelo número ordinal"]]}]]))
+
+
+
 
 (defn single-range []
+  "Template for single-range queries responses."
   (r/with-let [statistics (subscribe [:report.single/statistics])
                by-crime-type (subscribe [:report.single/by-crime-type])
                by-neighborhood (subscribe [:report.single/by-neighborhood])
@@ -271,15 +397,13 @@
 
 (defn statistics-template []
   (r/with-let [params (subscribe [:report/params])
-               ;; result from data crunching, after submission
                statistics (subscribe [:report/statistics])]
     (when @statistics
       [:div
        [heading-template statistics]
        (if (= 1 (count @params))
          [single-range]
-         [composite-range])
-       [c/pretty-display "statistics" statistics]])))
+         [composite-range])])))
 
 
 (defn report-button []
