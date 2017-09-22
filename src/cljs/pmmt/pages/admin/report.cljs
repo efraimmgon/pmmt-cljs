@@ -144,7 +144,7 @@
        [:div.row
         [:div.col-md-12
          [:table.table.table-bordered.table-striped
-          [thead ["Registros 1", "Registros 2", "Variação"]]
+          [thead ["Registros 1", "Registros 2", "Variação (%)"]]
           [tbody @count-stats]]]]}]
      ; by crime type (comparison)
      [card
@@ -155,7 +155,7 @@
         [:div.row
          [:div.col-md-12
           [:table.table.table-bordered.table-striped
-           [thead-indexed ["Natureza", "Registros 1", "Registros 2", "Variação"]]
+           [thead-indexed ["Natureza", "Registros 1", "Registros 2", "Variação (%)"]]
            [tbody-indexed @by-crime-type]]]]
         [:div.row
          [:div.col-md-6
@@ -192,12 +192,12 @@
         [:div.row
          [:div.col-md-6
           [:table.table.table-bordered.table-striped
-           [thead ["Dia da semana", "Registros 1" "Registros 2" "Variação"]]
+           [thead ["Dia da semana", "Registros 1" "Registros 2" "Variação (%)"]]
            [tbody @by-weekday]]]
          [:div.col-md-6
           [chart
            {:display-name "chart-report-composite-by-weekday"
-            :chart-type "bar"
+            :chart-type "line"
             :data [(map first @by-weekday)
                    [(map second @by-weekday)
                     (map #(get % 2) @by-weekday)]]}]]]]}]
@@ -222,7 +222,7 @@
        [:div.row
         [:div.col-md-6
          [:table.table.table-bordered.table-striped
-          [thead ["Período", "Registros 1" "Registros 2" "Variação"]]
+          [thead ["Período", "Registros 1" "Registros 2" "Variação (%)"]]
           [tbody @by-period]]]
         [:div.col-md-6
          [chart
@@ -233,8 +233,8 @@
                    (map #(get % 2) @by-period)]]}]]]}]
      ; by hour
      [card
-      {:title "Registros"
-       :subtitle "Por hora"
+      {:title "Por hora"
+       :subtitle "Registros"
        :content
        [:div.row
         [:div.col-md-12
@@ -245,8 +245,8 @@
                   (map #(map second %) @by-hour)]}]]]}]
      ; by date
      [card
-      {:title "Registros"
-       :subtitle "Por data"
+      {:title "Por data"
+       :subtitle "Registros"
        :content
        [:div.row
         [:div.col-md-12
@@ -278,8 +278,8 @@
       {:title "Total de registros", :content (:count @statistics)}]
      ; by crime type
      [card
-      {:title "Registros"
-       :subtitle "Por natureza"
+      {:title "Por natureza"
+       :subtitle "Registros"
        :content
        [:div.row
         [:div.col-md-6
@@ -294,8 +294,8 @@
           [tbody @by-crime-type]]]]}]
      ; by neighborhood
      [card
-      {:title "Registros"
-       :subtitle "Por bairro"
+      {:title "Por bairro"
+       :subtitle "Registros"
        :content
        [:div.row
         [:div.col-md-12
@@ -310,8 +310,8 @@
           [tbody @by-neighborhood]]]]}]
      ; by weekday
      [card
-      {:title "Registros"
-       :subtitle "Por dia da semana"
+      {:title "Por dia da semana"
+       :subtitle "Registros"
        :content
        [:div.row
         [:div.col-md-6
@@ -326,8 +326,8 @@
           [tbody @by-weekday]]]]}]
      ; by route
      [card
-      {:title "Registros"
-       :subtitle "Por via"
+      {:title "Por via"
+       :subtitle "Registros"
        :content
        [:div.row
         [:div.col-md-12
@@ -342,8 +342,8 @@
           [tbody @by-route]]]]}]
      ; by period
      [card
-      {:title "Registros"
-       :subtitle "Por período"
+      {:title "Por período"
+       :subtitle "Registros"
        :content
        [:div.row
         [:div.col-md-6
@@ -358,8 +358,8 @@
           [tbody @by-period]]]]}]
      ; by hour
      [card
-      {:title "Registros"
-       :subtitle "Por hora"
+      {:title "Por hora"
+       :subtitle "Registros"
        :content
        [:div.row
         [:div.col-md-12
@@ -370,8 +370,8 @@
                   [(map second @by-hour)]]}]]]}]
      ; by date
      [card
-      {:title "Registros"
-       :subtitle "Por data"
+      {:title "Por data"
+       :subtitle "Registros"
        :content
        [:div.row
         [:div.col-md-12

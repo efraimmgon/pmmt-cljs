@@ -46,17 +46,46 @@
    (when footer
      [:div.footer footer])])
 
+(defn tabs
+  "Plain text tabs.
+   `items` is a coll of maps with keys :title and :body"
+  [items]
+  (r/with-let [ids (map #(gensym) (range (count items)))]
+    [:div
+     (into
+       [:ul.nav.nav-tabs
+        {:role "tablist"}]
+       ;;; tab title
+       (map
+        (fn [i item id]
+          [:li
+           (when (zero? i)
+             {:class "active"
+              :role "presentation"})
+           [:a {:data-toggle "tab", :href (str "#" id)}
+            (:title item)]])
+        (range) items ids))
+     ;;; tab body
+     (into
+       [:div.tab-content]
+       (map
+        (fn [i {:keys [body]} id]
+          [:div.tab-pane
+           {:id id
+            :class (when (zero? i) "active")}
+           body])
+        (range) items ids))]))
 
 ; --------------------------------------------------------------------
 ; Charts
 ; --------------------------------------------------------------------
 
 (defn chart [{:keys [display-name chart-type data]}]
-  (r/with-let [chart-type-dispatch
-               (condp = chart-type
-                      "pie" #(dispatch [:charts/plot-pie-chart % data])
-                      "line" #(dispatch [:charts/plot-line-chart % data])
-                      "bar" #(dispatch [:charts/plot-bar-chart % data]))]
+  (let [chart-type-dispatch
+        (condp = chart-type
+               "pie" #(dispatch [:charts/plot-pie-chart % data])
+               "line" #(dispatch [:charts/plot-line-chart % data])
+               "bar" #(dispatch [:charts/plot-bar-chart % data]))]
     (r/create-class
      {:display-name display-name
       :reagent-render
