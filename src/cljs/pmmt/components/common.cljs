@@ -81,17 +81,12 @@
 ; --------------------------------------------------------------------
 
 (defn chart [{:keys [display-name chart-type data]}]
-  (let [chart-type-dispatch
-        (condp = chart-type
-               "pie" #(dispatch [:charts/plot-pie-chart % data])
-               "line" #(dispatch [:charts/plot-line-chart % data])
-               "bar" #(dispatch [:charts/plot-bar-chart % data]))]
-    (r/create-class
-     {:display-name display-name
-      :reagent-render
-      (fn [] [:div.ct-chart])
-      :component-did-mount chart-type-dispatch
-      :component-did-update chart-type-dispatch})))
+  (r/create-class
+   {:display-name display-name
+    :reagent-render
+    (fn [] [:div.ct-chart])
+    :component-did-mount #(dispatch [:charts/plot-chart % chart-type data])
+    :component-did-update #(dispatch [:charts/plot-chart % chart-type data])}))
 
 
 ; --------------------------------------------------------------------

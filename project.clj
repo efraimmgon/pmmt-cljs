@@ -5,6 +5,7 @@
 
   :dependencies [[bouncer "1.0.0"]
                  [buddy "1.1.0"]
+                 [clj-pdf "2.2.29"]
                  [clj-time "0.12.0"]
                  [cljs-ajax "0.5.8"]
                  [cljsjs/plotly "1.29.3-0"]

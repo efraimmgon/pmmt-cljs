@@ -66,11 +66,11 @@
 
 (defn crime-groups [m]
   (cond
-    (string/includes? (:type m) "ROUBO") "ROUBO"
-    (string/includes? (:type m) "FURTO") "FURTO"
-    (string/includes? (:type m) "HOMICIDIO") "HOMICIDIO"
-    (string/includes? (:type m) "TRAFICO") "TRAFICO"
-    (string/includes? (:type m) "DROGAS") "DROGAS"))
+    (string/includes? (:crime-type m) "ROUBO") "ROUBO"
+    (string/includes? (:crime-type m) "FURTO") "FURTO"
+    (string/includes? (:crime-type m) "HOMICIDIO") "HOMICIDIO"
+    (string/includes? (:crime-type m) "TRAFICO") "TRAFICO"
+    (string/includes? (:crime-type m) "DROGAS") "DROGAS"))
 
 (defn group-crimes [& rows]
   (for [row rows]
@@ -79,7 +79,7 @@
                    (if-let [key (crime-groups m)]
                      (if (get m key)
                        (update-in acc [key :count] + (:count m))
-                       (assoc acc key {:type key :count (:count m)}))
+                       (assoc acc key {:crime-type key :count (:count m)}))
                      acc))
                  {} row))))
 
@@ -92,7 +92,7 @@
                   (get-in range1 [:crime-reports :count])
                   (get-in range2 [:crime-reports :count]))},
      :by-crime-type
-     (apply compare-data :type
+     (apply compare-data :crime-type
             (apply group-crimes
                    (map #(get-in % [:crime-reports :by-crime-type]) [range1 range2])))
 
@@ -111,8 +111,7 @@
        {:count
         (-> (db/get-crime-reports-count date-range) first :count),
         :by-crime-type
-        (db/get-crime-reports-by
-         (assoc date-range :field "c.type" :limit 10)),
+        (db/get-crime-reports-by-crime-type date-range),
         :by-neighborhood
         (db/get-crime-reports-by
          (assoc date-range :field "cr.neighborhood" :limit 10)),

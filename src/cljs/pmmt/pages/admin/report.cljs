@@ -129,12 +129,12 @@
   "Template for composite-range queries responses."
   (r/with-let [statistics (subscribe [:report/statistics])
                count-stats (subscribe [:report.compare/count])
-               by-crime-type (subscribe [:report.compare/by-crime-type])
-               by-neighborhood (subscribe [:report.composite/by-neighborhood])
+               by-crime-type (subscribe [:report.compare/by :crime-type])
+               by-neighborhood (subscribe [:report.composite/by :neighborhood])
                by-weekday (subscribe [:report.compare/by-weekday])
-               by-route (subscribe [:report.composite/by-route])
+               by-route (subscribe [:report.composite/by :route])
                by-period (subscribe [:report.compare/by-period])
-               by-hour (subscribe [:report.composite/by-hour])
+               by-hour (subscribe [:report.composite/by :hour])
                by-date (subscribe [:report.composite/by-date])]
     [:div
      ; count (comparison)
@@ -265,12 +265,12 @@
 (defn single-range []
   "Template for single-range queries responses."
   (r/with-let [statistics (subscribe [:report.single/statistics])
-               by-crime-type (subscribe [:report.single/by-crime-type])
-               by-neighborhood (subscribe [:report.single/by-neighborhood])
+               by-crime-type (subscribe [:report.single/by :crime-type])
+               by-neighborhood (subscribe [:report.single/by :neighborhood])
                by-weekday (subscribe [:report.single/by-weekday])
-               by-route (subscribe [:report.single/by-route])
+               by-route (subscribe [:report.single/by :route])
                by-period (subscribe [:report.single/by-period])
-               by-hour (subscribe [:report.single/by-hour])
+               by-hour (subscribe [:report.single/by :hour])
                by-date (subscribe [:report.single/by-date])]
     [:div
      ; count

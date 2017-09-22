@@ -215,34 +215,17 @@
 ; -------------------------------------------------------------------------
 
 (reg-event-db
- :charts/plot-pie-chart
- (fn [db [_ comp data-]]
+ :charts/plot-chart
+ (fn [db [_ comp chart-type data-]]
    (let [container (r/dom-node comp)
          data {:labels (first  data-)
-               :series (second data-)}]
-     (js/Chartist.Pie.
-      container
-      (clj->js data)))
-   db))
-
-(reg-event-db
- :charts/plot-line-chart
- (fn [db [_ comp data-]]
-   (let [container (r/dom-node comp)
-         data {:labels (first  data-)
-               :series (second data-)}]
-     (js/Chartist.Line.
-      container
-      (clj->js data)))
-   db))
-
-(reg-event-db
- :charts/plot-bar-chart
- (fn [db [_ comp data-]]
-   (let [container (r/dom-node comp)
-         data {:labels (first  data-)
-               :series (second data-)}]
-     (js/Chartist.Bar.
+               :series (second data-)}
+         Constructor
+         (condp = chart-type
+                "pie"  js/Chartist.Pie
+                "line" js/Chartist.Line
+                "bar"  js/Chartist.Bar)]
+     (Constructor.
       container
       (clj->js data)))
    db))
