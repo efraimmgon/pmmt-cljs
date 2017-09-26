@@ -1,13 +1,15 @@
 (ns pmmt.routes
   (:require
+   [accountant.core :as accountant]
    [goog.events :as events]
    [goog.history.EventType :as HistoryEventType]
    [re-frame.core :refer [dispatch]]
    [secretary.core :as secretary :include-macros true])
   (:import goog.History))
 
-;; Routes
-(secretary/set-config! :prefix "#")
+; ------------------------------------------------------------------------------
+; Routes
+; ------------------------------------------------------------------------------
 
 (secretary/defroute "/" []
   (dispatch [:page :home]))
@@ -40,12 +42,23 @@
 (secretary/defroute "/utilitarios/" []
   (dispatch [:page :utilitarios]))
 
-;; History
-;; must be called after routes have been defined
+; ------------------------------------------------------------------------------
+; History
+; must be called after routes have been defined
+; ------------------------------------------------------------------------------
+
 (defn hook-browser-navigation! []
   (doto (History.)
         (events/listen
           HistoryEventType/NAVIGATE
           (fn [event]
               (secretary/dispatch! (.-token event))))
-        (.setEnabled true)))
+        (.setEnabled true))
+  (accountant/configure-navigation!
+    {:nav-handler
+     (fn [path]
+       (secretary/dispatch! path))
+     :path-exists?
+     (fn [path]
+       (secretary/locate-route path))})
+  (accountant/dispatch-current!))

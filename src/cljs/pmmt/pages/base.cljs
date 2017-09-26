@@ -17,7 +17,7 @@
       [:i.caret]]]
     [:ul.dropdown-menu
      [:li
-      [:a {:href "#/admin"}
+      [:a {:href "/admin"}
        "Admin"]]
      [:li.divider]
      [:li [:a {:href "#"} "Separated link"]]]]
@@ -48,7 +48,7 @@
           [:li [account-actions user]]]
          [:ul.nav.navbar-nav.navbar-right
           [:li
-           [:a {:href "#/register"}
+           [:a {:href "/register"}
             "Register"]]])]]]))
 
 ; -----------------------------------------------------------------------
@@ -65,10 +65,10 @@
        [:nav.pull-left
         [:ul
          [:li
-          [:a {:href "#/"} "Home"]]
+          [:a {:href "/"} "Home"]]
          (when-not @user
            [:li
-            [:a {:href "#/register"} "Register"]])]]
+            [:a {:href "/register"} "Register"]])]]
        [:p.copyright.pull-right
         "© "
         (.getFullYear (js/Date.)) " "

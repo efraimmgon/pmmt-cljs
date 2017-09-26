@@ -27,7 +27,7 @@
         [:span.icon-bar]
         [:span.icon-bar]
         [:span.icon-bar]]
-       [:a.navbar-brand {:href (str "#/admin/" (name @active-panel))}
+       [:a.navbar-brand {:href (str "/admin/" (name @active-panel))}
         @active-panel-title]]
       [:div.collapse.navbar-collapse
        [:ul.nav.navbar-nav.navbar-left
@@ -78,7 +78,7 @@
 
 (defn sidebar-item [id title fav-icon active-panel]
   [:li {:class (when (= @active-panel id) "active")}
-   [:a {:href (str "#/admin/" (name id))}
+   [:a {:href (str "/admin/" (name id))}
     fav-icon
     [:p title]]])
 
@@ -115,7 +115,7 @@
     [:nav.pull-left
      [:ul
       [:li
-       [:a {:href "#/"} "Home"]]]]
+       [:a {:href "/"} "Home"]]]]
     [:p.copyright.pull-right
      "© "
      (.getFullYear (js/Date.))

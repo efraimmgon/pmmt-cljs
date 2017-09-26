@@ -39,7 +39,7 @@
        [:ul.nav.nav-pills
         [:li>a {:aria-expanded "true"
                 :data-toggle "tab"
-                :href "#/analise-criminal/geo/#howto"
+                :href "/analise-criminal/geo/#howto"
                 :on-click #(swap! display? not)}
          "Como usar?"]]
        [help-text display?]])))
