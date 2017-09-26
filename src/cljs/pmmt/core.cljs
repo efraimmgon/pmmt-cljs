@@ -13,8 +13,6 @@
 
 
 (defn init! []
-  (hook-browser-navigation!)
   (dispatch-sync [:set-initial-state])
-  (dispatch-sync [:page :home])
-  (dispatch-sync [:set-identity js/identity])
+  (hook-browser-navigation!)
   (mount-components))

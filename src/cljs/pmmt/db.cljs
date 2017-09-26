@@ -2,7 +2,7 @@
 
 (def default-db
   {:identity (js->clj js/identity :keywordize-keys true)
-   :page (when-not js/identity :home)
+   :page :home
    :sinop {:lat -11.8608456, :lng -55.50954509999997}
    :admin {:active-panel :dashboard
            :database {:setup-ready? false

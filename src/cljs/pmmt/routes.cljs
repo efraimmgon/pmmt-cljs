@@ -3,9 +3,30 @@
    [accountant.core :as accountant]
    [goog.events :as events]
    [goog.history.EventType :as HistoryEventType]
-   [re-frame.core :refer [dispatch]]
+   [re-frame.core :refer [dispatch subscribe]]
    [secretary.core :as secretary :include-macros true])
   (:import goog.History))
+
+(defn logged-in? []
+  @(subscribe [:identity]))
+
+(defn run-events [events]
+  (doseq [event events]
+    (if (logged-in?)
+      (dispatch event)
+      (dispatch [:add-login-event event]))))
+
+(defn context-url [url]
+  (str js/context url))
+
+(defn navigate! [url]
+  (accountant/navigate! (context-url url)))
+
+(defn admin-page-events [& events]
+  (.scrollTo js/window 0 0)
+  (run-events (into
+                [[:page :admin]]
+                events)))
 
 ; ------------------------------------------------------------------------------
 ; Routes
@@ -15,31 +36,25 @@
   (dispatch [:page :home]))
 
 (secretary/defroute "/admin" []
-  (dispatch [:page :admin])
-  (dispatch [:admin/set-active-panel "Dashboard" :dashboard]))
+  (admin-page-events [:admin/set-active-panel "Dashboard" :dashboard]))
 
 (secretary/defroute "/admin/dashboard" []
-  (dispatch [:page :admin])
-  (dispatch [:admin/set-active-panel "Dashboard" :dashboard]))
+  (admin-page-events [:admin/set-active-panel "Dashboard" :dashboard]))
 
 (secretary/defroute "/admin/database" []
-  (dispatch [:page :admin])
-  (dispatch [:admin/set-active-panel "Database" :database]))
+  (admin-page-events [:admin/set-active-panel "Database" :database]))
 
 (secretary/defroute "/admin/users" []
-  (dispatch [:page :admin])
-  (dispatch [:admin/set-active-panel "Users" :users]))
+  (admin-page-events [:admin/set-active-panel "Users" :users]))
 
 (secretary/defroute "/admin/geo" []
-  (dispatch [:page :admin])
-  (dispatch [:admin/set-active-panel "Georeferencing" :geo]))
+  (admin-page-events [:admin/set-active-panel "Georeferencing" :geo]))
 
 (secretary/defroute "/admin/report" []
-  (dispatch [:page :admin])
-  (dispatch [:admin/set-active-panel "Criminal report" :report]))
+  (admin-page-events [:admin/set-active-panel "Criminal report" :report]))
 
 
-(secretary/defroute "/utilitarios/" []
+(secretary/defroute "/utils" []
   (dispatch [:page :utilitarios]))
 
 ; ------------------------------------------------------------------------------

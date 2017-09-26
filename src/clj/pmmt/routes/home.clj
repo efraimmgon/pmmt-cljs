@@ -1,7 +1,7 @@
 (ns pmmt.routes.home
   (:require [pmmt.layout :as layout]
             [pmmt.db.core :as db]
-            [compojure.core :refer [defroutes GET POST]]
+            [compojure.core :refer [context defroutes GET POST]]
             [ring.util.http-response :as response]
             [clj-time.core :as t]
             [clj-time.format :as tf]
@@ -31,5 +31,12 @@
 
 (defroutes home-routes
   (GET "/" [] (home-page))
-  (GET "/docs" [] (-> (response/ok (-> "docs/docs.md" io/resource slurp))
-                      (response/header "Content-Type" "text/plain; charset=utf-8"))))
+  (GET "/utils" [] (home-page))
+  (context
+   "/admin" []
+   (GET "/" [] (home-page))
+   (GET "/dashboard" [] (home-page))
+   (GET "/database" [] (home-page))
+   (GET "/users" [] (home-page))
+   (GET "/geo" [] (home-page))
+   (GET "/report" [] (home-page))))

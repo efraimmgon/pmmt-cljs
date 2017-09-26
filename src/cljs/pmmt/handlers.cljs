@@ -35,8 +35,13 @@
    {:http-xhrio {:method :get
                  :uri "/db/crimes"
                  :on-success [:assoc-db :crimes]
-                 :response-format (ajax/json-response-format {:keywords? true})}
-    :db db}))
+                 :response-format (ajax/json-response-format {:keywords? true})}}))
+
+(reg-event-db
+ :add-login-event
+ (fn [db [_ event]]
+   (js/console.log (str "Not logged in: " event))
+   db))
 
 (reg-event-db
  :modal
@@ -74,11 +79,6 @@
  (fn [db _]
    (dissoc db :identity)))
 
-(reg-event-db
- :set-identity
- (fn [db [_ id]]
-   (assoc db :identity id)))
-
 (reg-event-fx
  :logout
  (fn [{:keys [db]} _]
@@ -86,5 +86,4 @@
                  :uri "/logout"
                  :format (ajax/json-request-format)
                  :on-success [:remove-identity]
-                 :response-format (ajax/json-response-format {:keywords? true})}
-    :db db}))
+                 :response-format (ajax/json-response-format {:keywords? true})}}))
