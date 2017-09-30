@@ -109,6 +109,7 @@
           [:li "MUNICIPIO"]
           [:li "BAIRRO"]
           [:li "TIPO LOGRADOURO"]
+          [:li "LOGRADOURO"]
           [:li "LOGR NUMERO"]
           [:li "LOGR COMPLEMENTO"]
           [:li "DATA FATO"]

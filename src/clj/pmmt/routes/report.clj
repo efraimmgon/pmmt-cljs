@@ -20,12 +20,12 @@
         (update-in [:range1 :from] format-date)
         (update-in [:range1 :to] format-date)
         (update-in [:range2 :from] format-date)
-        (update-in [:range2 :to] format-date)
-        (update :roubo #(when % (map :id (c/ROUBO))))
-        (update :furto #(when % (map :id (c/FURTO))))
-        (update :trafico #(when % (map :id (c/TRAFICO))))
-        (update :homicidio #(when % (map :id (c/HOMICIDIO))))
-        (update :neighborhood like-fn))))
+        (update-in [:range2 :to] format-date))))
+        ; (update :roubo #(when % (map :id (c/ROUBO))))
+        ; (update :furto #(when % (map :id (c/FURTO))))
+        ; (update :trafico #(when % (map :id (c/TRAFICO))))
+        ; (update :homicidio #(when % (map :id (c/HOMICIDIO))))
+        ; (update :neighborhood like-fn))))
 
 ; core ----------------------------------------------------------------
 
@@ -52,36 +52,16 @@
                     (get m2 :count))})
     (map #(get-in % [:crime-reports field]) ranges)))
 
-(defn compare-data [key & data]
-  (apply
-    map
-    (fn [m1 m2]
-      {key (key m1)
-       :old (:count m1)
-       :new (:count m2)
-       :increase (c/percentage-increase
-                   (get m1 :count)
-                   (get m2 :count))})
-    data))
-
-(defn crime-groups [m]
-  (cond
-    (string/includes? (:crime-type m) "ROUBO") "ROUBO"
-    (string/includes? (:crime-type m) "FURTO") "FURTO"
-    (string/includes? (:crime-type m) "HOMICIDIO") "HOMICIDIO"
-    (string/includes? (:crime-type m) "TRAFICO") "TRAFICO"
-    (string/includes? (:crime-type m) "DROGAS") "DROGAS"))
-
-(defn group-crimes [& rows]
-  (for [row rows]
-    (map second
-         (reduce (fn [acc m]
-                   (if-let [key (crime-groups m)]
-                     (if (get m key)
-                       (update-in acc [key :count] + (:count m))
-                       (assoc acc key {:crime-type key :count (:count m)}))
-                     acc))
-                 {} row))))
+(defn compare-crime-group [date-range1 date-range2]
+  (map (fn [data1 data2]
+         {:crime-group (:crime-group data1)
+          :old (:count data1)
+          :new (:count data2)
+          :increase (c/percentage-increase
+                      (get data1 :count)
+                      (get data2 :count))})
+       (db/get-crimes-reports-count-by-crime-group date-range1)
+       (db/get-crimes-reports-count-by-crime-group date-range2)))
 
 (defn compare [range1 range2]
   (let [ranges (map #(get-in % [:crime-reports :by-crime-type]) [range1 range2])]
@@ -91,11 +71,8 @@
       :increase (c/percentage-increase
                   (get-in range1 [:crime-reports :count])
                   (get-in range2 [:crime-reports :count]))},
-     :by-crime-type
-     (apply compare-data :crime-type
-            (apply group-crimes
-                   (map #(get-in % [:crime-reports :by-crime-type]) [range1 range2])))
-
+     :by-crime-group
+     (compare-crime-group (select-keys range1 [:from :to]) (select-keys range2 [:from :to]))
      :by-weekday
      (compare-fields :by-weekday :weekday range1 range2),
      :by-period

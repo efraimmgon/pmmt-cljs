@@ -92,10 +92,10 @@
 
 ;; todo: report on page - not modal
 (def default-values
-  {:range1 {:from {:year 2017, :month 1, :day 1}
-            :to   {:year 2017, :month 1, :day 31}}
-   :range2 {:from {:year 2017, :month 2, :day 1}
-            :to   {:year 2017, :month 2, :day 28}}})
+  {:range1 {:from {:year 2017, :month 7, :day 1}
+            :to   {:year 2017, :month 7, :day 31}}
+   :range2 {:from {:year 2017, :month 8, :day 1}
+            :to   {:year 2017, :month 8, :day 31}}})
 
 (defn report-form []
   (r/with-let [doc (atom default-values)
@@ -129,7 +129,7 @@
   "Template for composite-range queries responses."
   (r/with-let [statistics (subscribe [:report/statistics])
                count-stats (subscribe [:report.compare/count])
-               by-crime-type (subscribe [:report.compare/by :crime-type])
+               by-crime-group (subscribe [:report.compare/by :crime-group])
                by-neighborhood (subscribe [:report.composite/by :neighborhood])
                by-weekday (subscribe [:report.compare/by-weekday])
                by-route (subscribe [:report.composite/by :route])
@@ -148,7 +148,7 @@
           [tbody @count-stats]]]]}]
      ; by crime type (comparison)
      [card
-      {:title "Por natureza"
+      {:title "Por grupo de natureza"
        :subtitle "Registros"
        :content
        [:div
@@ -156,20 +156,20 @@
          [:div.col-md-12
           [:table.table.table-bordered.table-striped
            [thead-indexed ["Natureza", "Registros 1", "Registros 2", "Variação (%)"]]
-           [tbody-indexed @by-crime-type]]]]
+           [tbody-indexed @by-crime-group]]]]
         [:div.row
          [:div.col-md-6
           [chart
-           {:display-name "chart-report-composite-by-crime-type-1"
+           {:display-name "chart-report-composite-by-crime-group-1"
             :chart-type "pie"
-            :data [(range 1 (inc (count @by-crime-type)))
-                   (map second @by-crime-type)]}]]
+            :data [(range 1 (inc (count @by-crime-group)))
+                   (map second @by-crime-group)]}]]
          [:div.col-md-6
           [chart
-           {:display-name "chart-report-composite-by-crime-type-2"
+           {:display-name "chart-report-composite-by-crime-group-2"
             :chart-type "pie"
-            :data [(range 1 (inc (count @by-crime-type)))
-                   (map #(get % 2) @by-crime-type)]}]]]]}]
+            :data [(range 1 (inc (count @by-crime-group)))
+                   (map #(get % 2) @by-crime-group)]}]]]]}]
      ; by neighborhood (chart only)
      [card
       {:title "Por bairro"
@@ -403,7 +403,8 @@
        [heading-template statistics]
        (if (= 1 (count @params))
          [single-range]
-         [composite-range])])))
+         [composite-range])
+       [c/pretty-display "stats" statistics]])))
 
 
 (defn report-button []

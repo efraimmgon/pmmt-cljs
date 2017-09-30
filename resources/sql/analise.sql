@@ -24,35 +24,6 @@ SELECT * FROM crime_reports
 -- CRIME REPORTS
 -- -------------------------------------------------------------------
 
-
--- :name get-crime-reports :? :*
--- :doc fetches crime reports with usual filtering of fields
-SELECT * FROM crime_reports AS cr
-  INNER JOIN crimes AS c
-  ON cr.crime_id = c.id
-  WHERE cr.created_at BETWEEN :from AND :to
---~ (when (:neighborhood params) "AND cr.neighborhood LIKE :neighborhood")
-
-
--- :name get-crime-reports-raw :? :*
--- :doc fetches crime-reports with no filtering
-SELECT * FROM crime_reports AS cr
-  INNER JOIN crimes AS c
-  ON cr.crime_id = c.id
-
-
--- :name get-crime-reports-count-raw :? :*
---:doc fetch crime-reports count with no filtering
-SELECT COUNT(*) FROM crime_reports
-
-
--- :name get-crime-reports-count-by-crime-raw :? :*
-SELECT c.type, COUNT(*) FROM crime_reports AS cr
-  INNER JOIN crimes AS c
-  ON cr.crime_id = c.id
-  GROUP BY c.type ORDER BY c.type DESC
-
-
 -- :name get-crime-reports-count :? :*
 --:doc fetch crime-reports count with usual filtering
 SELECT COUNT(*) FROM crime_reports AS cr
@@ -170,3 +141,24 @@ SELECT cr.created_at AS "created-at",
   WHERE cr.created_at BETWEEN :from AND :to
   GROUP BY 1
   ORDER BY 1
+
+-- :name get-crimes-reports-count-by-crime-group :? :*
+-- filters `created_at` with :from and :to
+SELECT
+  CASE WHEN c.id IN (SELECT c.id FROM crimes c WHERE c.type LIKE '%ROUBO%')
+            THEN 'ROUBO'
+       WHEN c.id IN (SELECT c.id FROM crimes c WHERE c.type LIKE '%FURTO%')
+            THEN 'FURTO'
+       WHEN c.id IN (SELECT c.id FROM crimes c WHERE c.type LIKE '%HOMICIDIO%')
+            THEN 'HOMICIDIO'
+       WHEN c.id IN (SELECT c.id FROM crimes c WHERE c.type LIKE '%TRAFICO%')
+            THEN 'TRAFICO'
+       WHEN c.id IN (SELECT c.id FROM crimes c WHERE c.type LIKE '%DROGAS%')
+            THEN 'OUTROS - DROGAS'
+  END AS "crime-group",
+  COUNT(1)
+  FROM crime_reports cr
+  JOIN crimes c ON cr.crime_id = c.id
+  WHERE cr.created_at BETWEEN :from AND :to
+  GROUP BY 1
+  ORDER BY 1 DESC
