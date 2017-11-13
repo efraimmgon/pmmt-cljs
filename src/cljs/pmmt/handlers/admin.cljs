@@ -237,72 +237,90 @@
     (first colors)
     (take n colors)))
 
-(defmulti plot-chart :type)
+(defmulti chart-opts :type)
 
 ; dataset is a vector of ints
-(defmethod plot-chart :pie
+(defmethod chart-opts :pie
   [{:keys [id labels datasets]}]
-  (let [ctx (.getContext (.getElementById js/document id) "2d")
-        opts {:type :pie
-              :data {:labels labels
-                     :datasets [{:data datasets
-                                 :backgroundColor (take (count labels) colors)}]}}]
-    (js/Chart. ctx (clj->js opts))))
+  {:type :pie
+   :data {:labels labels
+          :datasets [{:data datasets
+                      :backgroundColor (take (count labels) colors)}]}})
 
 ; dataset is a vector maps with the keys: `data` and `label`
-(defmethod plot-chart :line
+(defmethod chart-opts :line
   [{:keys [id labels datasets]}]
-  (let [ctx (.getContext (.getElementById js/document id) "2d")
-        opts {:type :line
-              :data {:labels labels
-                     :datasets (map-indexed
-                                (fn [i row]
-                                  {:data (:data row)
-                                   :label (:label row)
-                                   :borderColor (colors i)
-                                   :fill false})
-                                datasets)}}]
-    (js/Chart. ctx (clj->js opts))))
+  {:type :line
+   :data {:labels labels
+          :datasets (map-indexed
+                     (fn [i row]
+                       {:data (:data row)
+                        :label (:label row)
+                        :borderColor (colors i)
+                        :fill false})
+                     datasets)}})
 
-(defmethod plot-chart :bar
+(defmethod chart-opts :bar
   [{:keys [id labels datasets]}]
-  (let [ctx (.getContext (.getElementById js/document id) "2d")
-        opts {:type :bar
-              :data {:labels labels
-                     :datasets [{:data datasets
-                                 :backgroundColor (take (count labels) colors)}]}
-              :options {:legend {:display false}}}]
-    (js/Chart. ctx (clj->js opts))))
+  {:type :bar
+   :data {:labels labels
+          :datasets [{:data datasets
+                      :backgroundColor (take (count labels) colors)}]}
+   :options {:legend {:display false}}})
 
-(defmethod plot-chart :horizontal-bar
+(defmethod chart-opts :grouped-bar
   [{:keys [id labels datasets]}]
-  (let [ctx (.getContext (.getElementById js/document id) "2d")
-        opts {:type :horizontalBar
-              :data {:labels labels
-                     :datasets [{:data datasets
-                                 :backgroundColor (take (count labels) colors)}]}
-              :options {:legend {:display false}}}]
-    (js/Chart. ctx (clj->js opts))))
+  {:type :bar
+   :data {:labels labels
+          :datasets (map-indexed
+                     (fn [i row]
+                       {:data (:data row)
+                        :label (:label row)
+                        :backgroundColor (colors i)
+                        :fill false})
+                     datasets)}
+   :options {:legend {:display false}}})
 
-(defmethod plot-chart :radar
+(defmethod chart-opts :horizontal-bar
   [{:keys [id labels datasets]}]
-  (let [ctx (.getContext (.getElementById js/document id) "2d")
-        opts {:type :radar
-              :data {:labels labels
-                     :datasets (map-indexed
-                                (fn [i row]
-                                  {:data (:data row)
-                                   :label (:label row)
-                                   :backgroundColor (colors i)
-                                   :borderColor (colors i)
-                                   :pointBorderColor "#fff"
-                                   :pointBackgroundColor (colors i)
-                                   :fill true})
-                                datasets)}}]
-    (js/Chart. ctx (clj->js opts))))
+  {:type :horizontalBar
+   :data {:labels labels
+          :datasets [{:data datasets
+                      :backgroundColor (take (count labels) colors)}]}
+   :options {:legend {:display false}}})
+
+(defmethod chart-opts :grouped-horizontal-bar
+  [{:keys [id labels datasets]}]
+  {:type :horizontalBar
+   :data {:labels labels
+          :datasets (map-indexed
+                     (fn [i row]
+                       {:data (:data row)
+                        :label (:label row)
+                        :backgroundColor (colors i)
+                        :fill false})
+                     datasets)}
+   :options {:legend {:display false}}})
+
+(defmethod chart-opts :radar
+  [{:keys [id labels datasets]}]
+  {:type :radar
+   :data {:labels labels
+          :datasets (map-indexed
+                     (fn [i row]
+                       {:data (:data row)
+                        :label (:label row)
+                        :backgroundColor (colors i)
+                        :borderColor (colors i)
+                        :pointBorderColor "#fff"
+                        :pointBackgroundColor (colors i)
+                        :fill true})
+                     datasets)}})
 
 (reg-event-fx
  :charts/plot-chart
  (fn [db [_ opts]]
-   (plot-chart opts)
+   (js/Chart.
+    (.getContext (.getElementById js/document (:id opts)) "2d")
+    (clj->js (chart-opts opts)))
    nil))

@@ -160,16 +160,17 @@
         [:div.row
          [:div.col-md-6
           [chart
-           {:display-name "chart-report-composite-by-crime-group-1"
-            :chart-type "pie"
-            :data [(range 1 (inc (count @by-crime-group)))
-                   (map second @by-crime-group)]}]]
+           {:id "chart-report-composite-by-crime-group-1"
+            :type :pie
+            :labels (range 1 (inc (count @by-crime-group)))
+            :datasets (map second @by-crime-group)}]]
          [:div.col-md-6
           [chart
-           {:display-name "chart-report-composite-by-crime-group-2"
-            :chart-type "pie"
-            :data [(range 1 (inc (count @by-crime-group)))
-                   (map #(get % 2) @by-crime-group)]}]]]]}]
+           {:id "chart-report-composite-by-crime-group-2"
+            :type :pie
+            :labels (range 1 (inc (count @by-crime-group)))
+            :datasets (map #(get % 2) @by-crime-group)}]]]]}]
+
      ; by neighborhood (chart only)
      [card
       {:title "Por bairro"
@@ -177,12 +178,15 @@
        :content
        (into
          [:div.row]
-         (for [rows @by-neighborhood]
-           [:div.col-md-12
-            [chart
-             {:chart-type "bar"
-              :data [(map first rows)
-                     [(map second rows)]]}]]))}]
+         (map-indexed
+          (fn [i rows]
+            [:div.col-md-12
+             [chart
+              {:id (str "chart-report-by-neighborhood" i)
+               :type :horizontal-bar
+               :labels (map first rows)
+               :datasets (map second rows)}]])
+          @by-neighborhood))}]
      ; by weekday (comparison)
      [card
       {:title "Por dia da semana"
@@ -196,11 +200,10 @@
            [tbody @by-weekday]]]
          [:div.col-md-6
           [chart
-           {:display-name "chart-report-composite-by-weekday"
-            :chart-type "line"
-            :data [(map first @by-weekday)
-                   [(map second @by-weekday)
-                    (map #(get % 2) @by-weekday)]]}]]]]}]
+           {:id "chart-report-composite-by-weekday"
+            :type :bar
+            :labels (map first @by-weekday)
+            :datasets (map #(get % 2) @by-weekday)}]]]]}]
      ; by route
      [card
       {:title "Por via"
@@ -208,12 +211,15 @@
        :content
        (into
          [:div.row]
-         (for [rows @by-route]
-           [:div.col-md-12
-            [chart
-             {:chart-type "bar"
-              :data [(map first rows)
-                     [(map second rows)]]}]]))}]
+         (map-indexed
+          (fn [i rows]
+            [:div.col-md-12
+             [chart
+              {:id (str "chart-report-by-route" i)
+               :type :horizontal-bar
+               :labels (map first rows)
+               :datasets (map second rows)}]])
+          @by-route))}]
      ; by period (comparison)
      [card
       {:title "Por período"
@@ -226,11 +232,13 @@
           [tbody @by-period]]]
         [:div.col-md-6
          [chart
-          {:display-name "chart-report-composite-by-period"
-           :chart-type "line"
-           :data [(map first @by-period)
-                  [(map second @by-period)
-                   (map #(get % 2) @by-period)]]}]]]}]
+          {:id "chart-report-composite-by-period"
+           :type :line
+           :labels (map first @by-period)
+           :datasets [{:label "Report by period 1"
+                       :data (map second @by-period)}
+                      {:label "Report by period 2"
+                       :data (map #(get % 2) @by-period)}]}]]]}]
      ; by hour
      [card
       {:title "Por hora"
@@ -239,28 +247,31 @@
        [:div.row
         [:div.col-md-12
          [chart
-          {:display-name "chart-report-composite-by-hour"
-           :chart-type "line"
-           :data [(map first (first @by-hour))
-                  (map #(map second %) @by-hour)]}]]]}]
+          {:id "chart-report-composite-by-hour"
+           :type :line
+           :labels (map first (first @by-hour))
+           :datasets (map-indexed
+                      (fn [i rows]
+                        {:label (str "Reports by hour " (inc i))
+                         :data (map second rows)})
+                      @by-hour)}]]]}]
      ; by date
      [card
       {:title "Por data"
        :subtitle "Registros"
        :content
-       [:div.row
-        [:div.col-md-12
-         [chart
-          {:display-name "chart-report-single-by-date"
-           :chart-type "line"
-           :data [(range 1 (inc (count (first @by-date))))
-                  (map #(map second %) @by-date)]}]]]
-       :footer
-       [:div.legend
-        [:p "* Datas substituídas pelo número ordinal"]]}]]))
-
-
-
+       (into
+         [:div.row]
+         (map-indexed
+          (fn [i rows]
+            [:div.col-md-12
+             [chart
+              {:id (str "chart-report-single-by-date" i)
+               :type :line
+               :labels (map first rows)
+               :datasets [{:label (str "Reports by date " (inc i))
+                           :data (map second rows)}]}]])
+          @by-date))}]]))
 
 (defn single-range []
   "Template for single-range queries responses."
@@ -284,10 +295,11 @@
        [:div.row
         [:div.col-md-6
          [chart
-          {:display-name "chart-report-single-by-crime-type"
-           :chart-type "pie"
-           :data [(range 1 (inc (count @by-crime-type)))
-                  (map second @by-crime-type)]}]]
+          {:id "chart-report-single-by-crime-type"
+           :type :pie
+           :labels (range 1 (inc (count @by-crime-type)))
+           :datasets (map second @by-crime-type)}]]
+
         [:div.col-md-6
          [:table.table.table-bordered.table-striped
           [thead ["Natureza", "Registros"]]
@@ -300,10 +312,10 @@
        [:div.row
         [:div.col-md-12
          [chart
-          {:display-name "chart-report-single-by-neighborhood"
-           :chart-type "bar"
-           :data [(map first @by-neighborhood)
-                  [(map second @by-neighborhood)]]}]]
+          {:id "chart-report-single-by-neighborhood"
+           :type :bar
+           :labels (map first @by-neighborhood)
+           :datasets (map second @by-neighborhood)}]]
         [:div.col-md-12
          [:table.table.table-bordered.table-striped
           [thead ["Bairro", "Registros"]]
@@ -316,10 +328,10 @@
        [:div.row
         [:div.col-md-6
          [chart
-          {:display-name "chart-report-single-by-weekday"
-           :chart-type "bar"
-           :data [(map first @by-weekday)
-                  [(map second @by-weekday)]]}]]
+          {:id "chart-report-single-by-weekday"
+           :type :bar
+           :labels (map first @by-weekday)
+           :datasets (map second @by-weekday)}]]
         [:div.col-md-6
          [:table.table.table-bordered.table-striped
           [thead ["Dia da semana", "Registros"]]
@@ -332,10 +344,10 @@
        [:div.row
         [:div.col-md-12
          [chart
-          {:display-name "chart-report-single-by-route"
-           :chart-type "bar"
-           :data [(map first @by-route)
-                  [(map second @by-route)]]}]]
+          {:id "chart-report-single-by-route"
+           :type :bar
+           :labels (map first @by-route)
+           :datasets (map second @by-route)}]]
         [:div.col-md-12
          [:table.table.table-bordered.table-striped
           [thead ["Por via", "Registros"]]
@@ -348,10 +360,11 @@
        [:div.row
         [:div.col-md-6
          [chart
-          {:display-name "chart-report-single-by-period"
-           :chart-type "line"
-           :data [(map first @by-period)
-                  [(map second @by-period)]]}]]
+          {:id "chart-report-single-by-period"
+           :type :line
+           :labels (map first @by-period)
+           :datasets [{:label "Reports by period"
+                       :data (map second @by-period)}]}]]
         [:div.col-md-6
          [:table.table.table-bordered.table-striped
           [thead ["Período", "Registros"]]
@@ -364,10 +377,11 @@
        [:div.row
         [:div.col-md-12
          [chart
-          {:display-name "chart-report-single-by-hour"
-           :chart-type "line"
-           :data [(map first @by-hour)
-                  [(map second @by-hour)]]}]]]}]
+          {:id "chart-report-single-by-hour"
+           :type :line
+           :labels (map first @by-hour)
+           :datasets [{:label "Reports by hour"
+                       :data (map second @by-hour)}]}]]]}]
      ; by date
      [card
       {:title "Por data"
@@ -376,13 +390,11 @@
        [:div.row
         [:div.col-md-12
          [chart
-          {:display-name "chart-report-single-by-date"
-           :chart-type "line"
-           :data [(range 1 (inc (count @by-date)))
-                  [(map second @by-date)]]}]]]
-       :footer
-       [:div.legend
-        [:p "* Datas substituídas pelo número ordinal"]]}]]))
+          {:id "chart-report-single-by-date"
+           :type :line
+           :labels (map first @by-date)
+           :datasets [{:label "Reports by date"
+                       :data (map second @by-date)}]}]]]}]]))
 
 (defn heading-template [search-response]
   (let [col-length (/ 12 (count (:ranges @search-response)))]
@@ -403,8 +415,7 @@
        [heading-template statistics]
        (if (= 1 (count @params))
          [single-range]
-         [composite-range])
-       [c/pretty-display "stats" statistics]])))
+         [composite-range])])))
 
 
 (defn report-button []
