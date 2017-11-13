@@ -5,7 +5,6 @@
    [reagent.core :as r :refer [atom]]
    [re-frame.core :as re-frame :refer [subscribe]]
    [pmmt.pages.admin.core :as adm]
-   ;; REVIEW: remove reg?
    [pmmt.components.registration :as reg]
    [pmmt.pages.base :refer [base-template]]
    [pmmt.pages.login :refer [login-template]]))

@@ -80,13 +80,13 @@
 ; Charts
 ; --------------------------------------------------------------------
 
-(defn chart [{:keys [display-name chart-type data]}]
+(defn chart [opts]
   (r/create-class
-   {:display-name display-name
+   {:display-name (:id opts)
     :reagent-render
-    (fn [] [:div.ct-chart])
-    :component-did-mount #(dispatch [:charts/plot-chart % chart-type data])
-    :component-did-update #(dispatch [:charts/plot-chart % chart-type data])}))
+    (fn [] [:canvas.ct-chart {:id (:id opts)}])
+    :component-did-mount #(dispatch [:charts/plot-chart opts])
+    :component-did-update #(dispatch [:charts/plot-chart opts])}))
 
 
 ; --------------------------------------------------------------------

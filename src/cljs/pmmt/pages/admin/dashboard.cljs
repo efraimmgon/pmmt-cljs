@@ -16,18 +16,10 @@
         :subtitle "by Crime Type"
         :content
         [chart
-         {:display-name "chart-reports-by-crime-type"
-          :chart-type "pie"
-          :data [(range 1 (count @crime-reports-by-crime-type))
-                 (map :count @crime-reports-by-crime-type)]}]
-        :footer
-        [:div.legend
-         [:h6 "Legend"]
-         (into [:ol]
-           (map
-            (fn [row]
-              [:li (:crime-type row)])
-            @crime-reports-by-crime-type))]}])))
+         {:id "chart-reports-by-crime-type"
+          :type :horizontal-bar
+          :labels (map :crime-type @crime-reports-by-crime-type)
+          :datasets (map :count @crime-reports-by-crime-type)}]}])))
 
 (defn crime-reports-by-month-template []
   (r/with-let [crime-reports-by-month (subscribe [:admin.crime-reports/by-month])]
@@ -36,10 +28,14 @@
        {:title "Crime Reports"
         :subtitle "by Month"
         :content [chart
-                  {:display-name "chart-reports-by-month"
-                   :chart-type "line"
-                   :data [(map #(inc (.getMonth (:month %))) @crime-reports-by-month)
-                          [(map :count @crime-reports-by-month)]]}]}])))
+                  {:id "chart-reports-by-month"
+                   :type :bar
+                   :labels (map #(inc (.getMonth (:month %))) @crime-reports-by-month)
+                   :datasets (map :count @crime-reports-by-month)}]}])))
+                   ; :type :line
+                   ; :labels (map #(inc (.getMonth (:month %))) @crime-reports-by-month)
+                   ; :datasets [{:label "Reports by month"
+                   ;             :data (map :count @crime-reports-by-month)}]}]}])))
 
 (defn crime-reports-by-hour-template []
   (r/with-let [crime-reports-by-hour (subscribe [:admin.crime-reports/by-hour])]
@@ -48,10 +44,12 @@
        {:title "Crime Reports"
         :subtitle "by Hour"
         :content [chart
-                  {:display-name "chart-reports-by-hour"
-                   :chart-type "bar"
-                   :data [(map :hour @crime-reports-by-hour)
-                          [(map :count @crime-reports-by-hour)]]}]}])))
+                  {:id "chart-reports-by-hour"
+                   :type :line
+                   :labels (map :hour @crime-reports-by-hour)
+                   :datasets [{:label "Reports by hour"
+                               :data (map :count @crime-reports-by-hour)}]}]}])))
+
 
 ; -----------------------------------------------------------------------
 ; Content

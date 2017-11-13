@@ -18,11 +18,13 @@
                active-panel-title (subscribe [:admin/active-panel-title])]
     [:nav.navbar.navbar-default
      [:div.container-fluid
+      [:div.navbar-minimize
+       [:button#minimizeSidebar.btn.btn-warning.btn-fill.btn-round.btn-icon
+        [:i.fa.fa-ellipsis-v.visible-on-sidebar-regular]
+        [:i.fa.fa-navicon.visible-on-sidebar-mini]]]
       [:div.navbar-header
        [:button.navbar-toggle
-        {:data-target "#navigation-example-2",
-         :data-toggle "collapse",
-         :type "button"}
+        {:data-toggle "collapse", :type "button"}
         [:span.sr-only "Toggle navigation"]
         [:span.icon-bar]
         [:span.icon-bar]
@@ -30,47 +32,37 @@
        [:a.navbar-brand {:href (str "/admin/" (name @active-panel))}
         @active-panel-title]]
       [:div.collapse.navbar-collapse
-       [:ul.nav.navbar-nav.navbar-left
-        [:li
-         [:a.dropdown-toggle
-          {:data-toggle "dropdown", :href "#"}
-          [:i.fa.fa-dashboard]]
-         [:p.hidden-lg.hidden-md "Dashboard"]]
-        [:li.dropdown
-         [:a.dropdown-toggle
-          {:data-toggle "dropdown", :href "#"}
-          [:i.fa.fa-globe]
-          [:b.caret.hidden-sm.hidden-xs]
-          [:span.notification.hidden-sm.hidden-xs "5"]]
-         [:p.hidden-lg.hidden-md
-          "5 Notifications"
-          [:b.caret]]
-         [:ul.dropdown-menu
-          [:li [:a {:href "#"} "Notification 1"]]
-          [:li [:a {:href "#"} "Notification 2"]]
-          [:li [:a {:href "#"} "Notification 3"]]
-          [:li [:a {:href "#"} "Notification 4"]]
-          [:li [:a {:href "#"} "Another notification"]]]]
-        [:li
-         [:a {:href ""} [:i.fa.fa-search]]
-         [:p.hidden-lg.hidden-md "Search"]]]
+       [:form.navbar-form.navbar-left.navbar-search-form
+        {:role "search"}
+        [:div.input-group
+         [:span.input-group-addon [:i.fa.fa-search]]
+         [:input.form-control
+          {:placeholder "Search...", :value "", :type "text"}]]]
        [:ul.nav.navbar-nav.navbar-right
-        [:li [:a {:href ""} [:p "Account"]]]
-        [:li.dropdown
-         [:a.dropdown-toggle {:data-toggle "dropdown", :href "#"}
-          [:p
-           "Dropdown"
-           [:b.caret]]]
-         [:ul.dropdown-menu
-          [:li [:a {:href "#"} "Action"]]
-          [:li [:a {:href "#"} "Another action"]]
-          [:li [:a {:href "#"} "Something"]]
-          [:li [:a {:href "#"} "Another action"]]
-          [:li [:a {:href "#"} "Something"]]
+        [:li.dropdown.dropdown-with-icons
+         [:a.dropdown-toggle
+          {:data-toggle "dropdown", :href "#"}
+          [:i.fa.fa-list]]
+         [:p.hidden-md.hidden-lg
+          "\n\t\t\t\t\t\t\t\t\tMore\n\t\t\t\t\t\t\t\t\t"
+          [:b.caret]]
+         [:ul.dropdown-menu.dropdown-with-icons
+          [:li
+           [:a
+            {:href "#"}
+            [:i.pe-7s-tools]
+            " Settings"]]
           [:li.divider]
-          [:li [:a {:href "#"} "Separated link"]]]]
-        [:li [:a {:href "#"} [:p "Log out"]]]
-        [:li.separator.hidden-lg.hidden-md]]]]]))
+          [:li
+           [:a
+            {:href "#"}
+            [:i.pe-7s-lock]
+            " Lock Screen"]]
+          [:li
+           [:a.text-danger
+            {:href "#"}
+            [:i.pe-7s-close-circle]
+            "Log out"]]]]]]]]))
 
 ; -----------------------------------------------------------------------
 ; SIDEBAR

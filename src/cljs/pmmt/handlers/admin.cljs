@@ -5,7 +5,7 @@
    [ajax.core :as ajax]
    [clojure.string :as string]
    [reagent.core :as r]
-   [re-frame.core :refer [dispatch reg-event-db reg-sub]]
+   [re-frame.core :refer [dispatch reg-event-db reg-event-fx reg-sub]]
    [pmmt.subs :refer [query]]))
 
 ; -------------------------------------------------------------------------
@@ -211,21 +211,98 @@
 
 
 ; -------------------------------------------------------------------------
-; Chartist
+; Charts
 ; -------------------------------------------------------------------------
 
-(reg-event-db
+(def colors
+  ["#001f3f" ; navy
+   "#0074D9" ; blue
+   "#7FDBFF" ; aqua
+   "#39CCCC" ; teal
+   "#3D9970" ; olive
+   "#2ECC40" ; green
+   "#01FF70" ; lime
+   "#FFDC00" ; yellow
+   "#FF851B" ; orange
+   "#FF4136" ; red
+   "#85144b" ; maroon
+   "#F012BE" ; fuchsia
+   "#B10DC9" ; purple
+   "#111111" ; black
+   "#AAAAAA" ; gray
+   "#DDDDDD"]) ;silver
+
+(defn pick-background-colors [n]
+  (if (= 1 n)
+    (first colors)
+    (take n colors)))
+
+(defmulti plot-chart :type)
+
+; dataset is a vector of ints
+(defmethod plot-chart :pie
+  [{:keys [id labels datasets]}]
+  (let [ctx (.getContext (.getElementById js/document id) "2d")
+        opts {:type :pie
+              :data {:labels labels
+                     :datasets [{:data datasets
+                                 :backgroundColor (take (count labels) colors)}]}}]
+    (js/Chart. ctx (clj->js opts))))
+
+; dataset is a vector maps with the keys: `data` and `label`
+(defmethod plot-chart :line
+  [{:keys [id labels datasets]}]
+  (let [ctx (.getContext (.getElementById js/document id) "2d")
+        opts {:type :line
+              :data {:labels labels
+                     :datasets (map-indexed
+                                (fn [i row]
+                                  {:data (:data row)
+                                   :label (:label row)
+                                   :borderColor (colors i)
+                                   :fill false})
+                                datasets)}}]
+    (js/Chart. ctx (clj->js opts))))
+
+(defmethod plot-chart :bar
+  [{:keys [id labels datasets]}]
+  (let [ctx (.getContext (.getElementById js/document id) "2d")
+        opts {:type :bar
+              :data {:labels labels
+                     :datasets [{:data datasets
+                                 :backgroundColor (take (count labels) colors)}]}
+              :options {:legend {:display false}}}]
+    (js/Chart. ctx (clj->js opts))))
+
+(defmethod plot-chart :horizontal-bar
+  [{:keys [id labels datasets]}]
+  (let [ctx (.getContext (.getElementById js/document id) "2d")
+        opts {:type :horizontalBar
+              :data {:labels labels
+                     :datasets [{:data datasets
+                                 :backgroundColor (take (count labels) colors)}]}
+              :options {:legend {:display false}}}]
+    (js/Chart. ctx (clj->js opts))))
+
+(defmethod plot-chart :radar
+  [{:keys [id labels datasets]}]
+  (let [ctx (.getContext (.getElementById js/document id) "2d")
+        opts {:type :radar
+              :data {:labels labels
+                     :datasets (map-indexed
+                                (fn [i row]
+                                  {:data (:data row)
+                                   :label (:label row)
+                                   :backgroundColor (colors i)
+                                   :borderColor (colors i)
+                                   :pointBorderColor "#fff"
+                                   :pointBackgroundColor (colors i)
+                                   :fill true})
+                                datasets)}}]
+    (js/Chart. ctx (clj->js opts))))
+
+(reg-event-fx
  :charts/plot-chart
- (fn [db [_ comp chart-type data-]]
-   (let [container (r/dom-node comp)
-         data {:labels (first  data-)
-               :series (second data-)}
-         Constructor
-         (condp = chart-type
-                "pie"  js/Chartist.Pie
-                "line" js/Chartist.Line
-                "bar"  js/Chartist.Bar)]
-     (Constructor.
-      container
-      (clj->js data)))
-   db))
+ (fn [db [_ opts]]
+   (plot-chart opts)
+   nil))
