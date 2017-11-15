@@ -127,6 +127,13 @@
         :return Result
         (upload/save-data! file))
 
+  (POST "/load-csv-file" req
+        :multipart-params [file :- TempFileUpload]
+        :middleware [wrap-multipart-params]
+        :summary "handles reports csv file upload"
+        (upload/load-csv-file file))
+
+
   (context
    "/api" []
    :tags ["api"]

@@ -99,10 +99,10 @@
      ;; NOTE: <implementatian simplicity> each 50 queries we wait
      ;;       for a second before continuing execution so we don't
      ;;       exceed our 50 queries/s limit.
-     (= queries 50)
+     (= queries 10)
      (js/setTimeout
       #(run-geocode crime-reports (assoc control :queries 0))
-      1000)
+      50000)
 
      (seq crime-reports)
      (do (geocode (assoc-geocoder-request (first crime-reports)) query-limit?)

@@ -107,3 +107,10 @@
     (catch Exception e
       (log/error e)
       (internal-server-error "error"))))
+
+(defn load-csv-file [{:keys [tempfile filename content-type] :as file}]
+  (try
+    (ok {:result (-> tempfile io/reader csv/read-csv csv->map)})
+    (catch Exception e
+      (log/error e)
+      (internal-server-error "error"))))

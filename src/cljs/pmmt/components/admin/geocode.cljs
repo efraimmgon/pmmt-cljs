@@ -20,7 +20,7 @@
 
 (defn setup! []
   (let [setup-ready? (r/cursor local-state [:setup-ready?])
-        google-api-key (subscribe [:setting/google-api-key])]
+        google-api-key (subscribe [:settings/google-api-key])]
     (when-not @setup-ready?
       (c/add-script!
        {:src (str "https://maps.googleapis.com/maps/api/js?"

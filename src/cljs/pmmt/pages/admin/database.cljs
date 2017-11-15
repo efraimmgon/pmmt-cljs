@@ -6,6 +6,7 @@
    [pmmt.components.common :as c]
    ;; TODO: refactor namespaces
    [pmmt.components.admin.geocode :refer [sync-lat-lng-panel]]
+   [pmmt.components.admin.sync-lab :refer [sync-lab-panel]]
    [pmmt.components.admin.upload :as upload]))
 
 (defn setup! []
@@ -162,12 +163,14 @@
    [:ul.nav.nav-tabs
     [nav-pill "Tabelas" :database active-panel]
     [nav-pill "Inserir dados" :update-db active-panel]
-    [nav-pill "Sincronizar Banco de Dados" :synchronize active-panel]]])
+    [nav-pill "Sincronizar Banco de Dados" :synchronize active-panel]
+    [nav-pill "Sync lab" :sync-lab active-panel]]])
 
 (def panels
   {:database database-panel
    :update-db update-db-panel
-   :synchronize sync-lat-lng-panel})
+   :synchronize sync-lat-lng-panel
+   :sync-lab sync-lab-panel})
 
 ; -------------------------------------------------------------------------
 ; Main Component

@@ -240,21 +240,19 @@
        (assoc db :geo-query-params @fields)))))
 
 (defn init-gmap [db [_ comp]]
-  (if (:gmap db)
-    db
-    (let [canvas (r/dom-node comp)
-          ;; default map values (Sinop, MT, BR)
-          map-opts (clj->js {:center {:lat -11.855275, :lng -55.505966}
-                             :zoom 14
-                             :mapTypeid js/google.maps.MapTypeId.ROADMAP})
-          ;;; initialize google maps assets
-          heatmap (js/google.maps.visualization.HeatmapLayer.)
-          gmap (js/google.maps.Map. canvas map-opts)
-          info-window (js/google.maps.InfoWindow.)]
-      (-> db
-          (assoc :gmap gmap)
-          (assoc :info-window info-window)
-          (assoc :heatmap heatmap)))))
+  (let [canvas (r/dom-node comp)
+        ;; default map values (Sinop, MT, BR)
+        map-opts (clj->js {:center {:lat -11.855275, :lng -55.505966}
+                           :zoom 14
+                           :mapTypeid js/google.maps.MapTypeId.ROADMAP})
+        ;;; initialize google maps assets
+        heatmap (js/google.maps.visualization.HeatmapLayer.)
+        gmap (js/google.maps.Map. canvas map-opts)
+        info-window (js/google.maps.InfoWindow.)]
+    (-> db
+        (assoc :gmap gmap)
+        (assoc :info-window info-window)
+        (assoc :heatmap heatmap))))
 
 (reg-event-db
  :init-gmap

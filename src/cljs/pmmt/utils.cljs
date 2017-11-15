@@ -1,6 +1,29 @@
 (ns pmmt.utils
   (:require [clojure.string :as string]))
 
+; ------------------------------------------------------------------------------
+; re-frame helpers
+; ------------------------------------------------------------------------------
+(defn extract-ns-and-name [k]
+  (mapv keyword
+       (-> k
+           name
+           (.split "."))))
+
+(defn query
+  "Meant to be used with a rf/reg-sub. Takes a `db` map and an event-id from
+   a rf/dispatch and gets the resource based on the namespaced id.
+   Ids are namespaced by `.`, eg: `admin.background-image`"
+  [db [event-id]]
+  (let [event-ks (extract-ns-and-name event-id)]
+    (get-in db event-ks)))
+
+(defn <sub [query-v]
+  (deref (rf/subscribe query-v)))
+
+; ------------------------------------------------------------------------------
+; misc
+; ------------------------------------------------------------------------------
 
 (defn domap
   "Implementation of Common Lisp `mapc`. It is like `map` except that the

@@ -72,6 +72,11 @@
  (fn [db [_ key f]]
    (update db key f)))
 
+(reg-event-db
+ :update-state
+ (fn [db [_ ks val]]
+   (assoc-in db ks val)))
+
 ; Auth ------------------------------------------------------------------
 
 (reg-event-db
