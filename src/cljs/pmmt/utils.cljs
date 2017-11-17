@@ -1,19 +1,24 @@
 (ns pmmt.utils
-  (:require [clojure.string :as string]))
+  (:require
+   [clojure.string :as string]
+   [re-frame.core :as rf]))
 
 ; ------------------------------------------------------------------------------
 ; re-frame helpers
 ; ------------------------------------------------------------------------------
+
 (defn extract-ns-and-name [k]
   (mapv keyword
-       (-> k
-           name
-           (.split "."))))
+        (if (qualified-keyword? k)
+          (into (string/split (namespace k) ".")
+                (string/split (name k) "."))
+          (string/split (name k) "."))))
 
 (defn query
   "Meant to be used with a rf/reg-sub. Takes a `db` map and an event-id from
    a rf/dispatch and gets the resource based on the namespaced id.
-   Ids are namespaced by `.`, eg: `admin.background-image`"
+   Ids are namespaced by `.`, eg: `admin.background-image` or as qualified
+   keywords, eg: `admin.views/background-image`"
   [db [event-id]]
   (let [event-ks (extract-ns-and-name event-id)]
     (get-in db event-ks)))

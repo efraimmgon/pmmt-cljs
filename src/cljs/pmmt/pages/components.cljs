@@ -20,8 +20,13 @@
 ; ------------------------------------------------------------------------------
 
 ; Helpers ----------------------------------------------------------------------
+(defn- keyword-or-int [x]
+  (if (int? (js/parseInt x))
+    (js/parseInt x)
+    (keyword x)))
+
 (defn extract-ns-and-name [k]
-  (mapv keyword
+  (mapv keyword-or-int
        (-> k
            name
            (.split "."))))
