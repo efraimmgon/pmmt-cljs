@@ -1,6 +1,7 @@
 (ns pmmt.pages.components
   (:require
    [cljs.reader :as reader]
+   [pmmt.utils :refer [extract-ns-and-name <sub]]
    [reagent.core :as r :refer [atom]]
    [re-frame.core :as rf]))
 
@@ -8,9 +9,8 @@
 ; Debugging
 ; ------------------------------------------------------------------------------
 
-(defn pretty-display [title data]
+(defn pretty-display [data]
   [:div
-   [:h3 title]
    [:pre
     (with-out-str
      (cljs.pprint/pprint @data))]])
@@ -25,29 +25,45 @@
     (js/parseInt x)
     (keyword x)))
 
-(defn extract-ns-and-name [k]
-  (mapv keyword-or-int
-       (-> k
-           name
-           (.split "."))))
-
-(defn- radio-input [attrs]
-  (let [ks (extract-ns-and-name (:name attrs))
-        attrs-defaults
+(defn- checkbox-input [attrs]
+  (let [name (:name attrs)
+        acc (rf/subscribe [:query name])
+        ks (extract-ns-and-name name)
+        f (fn [acc]
+            (let [val (:value attrs)]
+              (cond
+                (nil? acc) #{val}
+                (contains? acc val) (disj acc val)
+                :default (conj acc val))))
+        attrs+defaults
         (-> attrs
             (assoc :on-change
                    (fn [comp]
-                     (rf/dispatch [:update-state ks (:value attrs)]))))]
-    [:input attrs-defaults]))
+                     (rf/dispatch [:update-state ks f])))
+            (update :default-checked
+                    #(or %
+                         (when (contains? @acc (:value attrs))
+                           true))))]
+    [:input attrs+defaults]))
+
+(defn- radio-input [attrs]
+  (let [name (:name attrs)
+        ks (extract-ns-and-name name)
+        attrs+defaults
+        (-> attrs
+            (assoc :on-change
+                   (fn [comp]
+                     (rf/dispatch [:set-state ks (:value attrs)]))))]
+    [:input attrs+defaults]))
 
 (defn- number-input [attrs]
   (let [ks (extract-ns-and-name (:name attrs))
-        attrs-defaults
+        attrs+defaults
         (-> attrs
             (assoc :on-change
                    (fn [comp]
-                     (rf/dispatch [:update-state ks (-> comp .-target .-value reader/read-string)]))))]
-    [:input attrs-defaults]))
+                     (rf/dispatch [:set-state ks (-> comp .-target .-value reader/read-string)]))))]
+    [:input attrs+defaults]))
 
 ; Core -------------------------------------------------------------------------
 
@@ -68,20 +84,22 @@
         attrs-defaults
         (-> attrs
             (update :on-change
-                    #(or % (fn [comp] (rf/dispatch [:update-state ks (-> comp .-target .-value)])))))]
+                    #(or % (fn [comp] (rf/dispatch [:set-state ks (-> comp .-target .-value)])))))]
     (condp = (:type attrs)
+           :checkbox [checkbox-input attrs]
            :radio [radio-input attrs-defaults]
            :number [number-input attrs-defaults]
 
            ;; default
-           [:input attrs-defaults])))
+           (do (println "I'm default")
+               [:input attrs-defaults]))))
 
 (defn textarea [attrs]
   (let [ks (extract-ns-and-name (:name attrs))
         attrs-defaults
         (-> attrs
             (update :on-change
-                    #(or % (fn [comp] (rf/dispatch [:update-state ks (-> comp .-target .-value)])))))]
+                    #(or % (fn [comp] (rf/dispatch [:set-state ks (-> comp .-target .-value)])))))]
     [:textarea attrs-defaults]))
 
 ;;; with the current implementation it does not support options with
@@ -96,10 +114,10 @@
             (update :on-change
                     #(or %
                          (fn [comp]
-                           (rf/dispatch [:update-state ks (-> comp .-target .-value reader/read-string)]))))
+                           (rf/dispatch [:set-state ks (-> comp .-target .-value reader/read-string)]))))
             (update :value
                     #(or %
-                         (do (rf/dispatch [:update-state ks default-val])
+                         (do (rf/dispatch [:set-state ks default-val])
                              default-val))))]
     (into
      [:select attrs-defaults]

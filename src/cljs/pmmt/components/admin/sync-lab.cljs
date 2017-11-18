@@ -6,7 +6,7 @@
    [reagent.core :as r :refer [atom]]
    [re-frame.core :as rf]
    [pmmt.components.common :as c]
-   [pmmt.pages.components :refer [input]]
+   [pmmt.pages.components :refer [input form-group pretty-display]]
    [pmmt.utils :refer [query]]))
 
 (defn csv->map [csv-data]
@@ -29,18 +29,24 @@
   (.addListener js/google.maps.event marker event f))
 
 (defn create-marker!
-  "Create a gmap marker and append it to the gmap instance
-  google.maps.Marker takes two keys:
-  - position which is a map with two keys: :lat and :lng
-  - title which will be rendered as the marker title"
-  [{:keys [gmap info-window position title]}]
+  "Create a js/google.maps.Marker; returns the marker instantiated.
+  - gMap is an instance of js/google.maps.Map;
+  - infoWindow is an instance of js/google.maps.InfoWindow
+  - position is a map with two keys: :lat and :lng
+  - events is a vector with an event (str) and a callback (fn)"
+  [{:keys [gMap infoWindow position title events]}]
   (let [marker (js/google.maps.Marker.
-                 (clj->js {:position position, :title title}))]
-    (.setMap marker gmap)
-    (add-listiner! marker "click" #(do (.setContent info-window title)
-                                       (.open info-window gmap marker)))
+                (clj->js {:position position, :title title}))]
+    (.setMap marker gMap)
     (add-listiner! marker "mouseover" #(.setOpacity marker 0.5))
-    (add-listiner! marker "mouseout" #(.setOpacity marker 1))))
+    (add-listiner! marker "mouseout" #(.setOpacity marker 1))
+    (when infoWindow
+      (add-listiner! marker "click" #(do (.setContent infoWindow title)
+                                         (.open infoWindow gMap marker))))
+    (when events
+      (doseq [[event callback] events]
+        (add-listiner! marker event callback)))
+    marker))
 
 ; TODO:
 ; [input csv file with neighborhoods, routes, lats and lats ready]
@@ -83,9 +89,9 @@
 
 (defn update-lat-lng [GeocoderResult address]
   (let [ks [:sync-lab :addresses (:id address)]]
-    (rf/dispatch [:update-state (conj ks :lat) (lat GeocoderResult)])
-    (rf/dispatch [:update-state (conj ks :lng) (lng GeocoderResult)])
-    (rf/dispatch [:update-state (conj ks :found) (formatted-address GeocoderResult)])))
+    (rf/dispatch [:set-state (conj ks :lat) (lat GeocoderResult)])
+    (rf/dispatch [:set-state (conj ks :lng) (lng GeocoderResult)])
+    (rf/dispatch [:set-state (conj ks :found) (formatted-address GeocoderResult)])))
 
 (defn geocode
   "Use `js/google.maps.Geocoder` to geocode an address"
@@ -113,7 +119,7 @@
      ;; NOTE: <implementatian simplicity> each 50 queries we wait
      ;;       for a second before continuing execution so we don't
      ;;       exceed our 50 queries/s limit.
-     (= queries 10)
+     (= queries 20)
      (js/setTimeout
       #(run-geocode addresses (assoc control :queries 0))
       50000)
@@ -131,13 +137,19 @@
    (run-geocode (filter #(string/blank? (:lat %)) (get-in db [:sync-lab :addresses])))
    (assoc-in db [:sync-lab :geocode :ready?] true)))
 
+; As we load new addresses we want to clear the markers from the map,
+; since they represent the previously loaded data.
 (rf/reg-event-db
  :sync-lab/load-addresses
  (fn [db [_ csv-]]
-   (assoc-in db [:sync-lab :addresses]
-             (vec
-              (map-indexed (fn [i row] (assoc row :id i))
-                           csv-)))))
+   (when-let [markers (get-in db [:sync-lab :markers])]
+     (clear-markers! markers))
+   (-> db
+       (assoc-in [:sync-lab :markers] [])
+       (assoc-in [:sync-lab :addresses]
+                 (vec
+                  (map-indexed (fn [i row] (assoc row :id i))
+                               csv-))))))
 
 (rf/reg-event-fx
  :sync-lab/process-input-file
@@ -151,11 +163,12 @@
 (rf/reg-event-fx
  :sync-lab/create-marker
  (fn [{:keys [db]} [_ title lat lng]]
-   (create-marker! {:gmap (get-in db [:sync-lab :gmap])
-                    :info-window (get-in db [:sync-lab :info-window])
-                    :position {:lat lat :lng lng}
-                    :title title})
-   nil))
+   (let [marker
+         (create-marker! {:gMap (get-in db [:sync-lab :gmap])
+                          :infoWindow (get-in db [:sync-lab :info-window])
+                          :position {:lat lat :lng lng}
+                          :title title})]
+     {:db (assoc-in db [:sync-lab :markers] marker)})))
 
 (rf/reg-event-fx
  :sync-lab/create-markers
@@ -166,24 +179,24 @@
    nil))
 
 
-(defn init-gmap [db [_ ns- comp]]
-  (let [canvas (r/dom-node comp)
-        ;; default map values (Sinop, MT, BR)
-        map-opts (clj->js {:center {:lat -11.855275, :lng -55.505966}
-                           :zoom 14
-                           :mapTypeid js/google.maps.MapTypeId.ROADMAP})
-        ;;; initialize google maps assets
-        heatmap (js/google.maps.visualization.HeatmapLayer.)
-        gmap (js/google.maps.Map. canvas map-opts)
-        info-window (js/google.maps.InfoWindow.)]
-    (-> db
-        (assoc-in (conj ns- :gmap) gmap)
-        (assoc-in (conj ns- :info-window) info-window)
-        (assoc-in (conj ns- :heatmap) heatmap))))
 
 (rf/reg-event-db
  :init-map
- init-gmap)
+ (fn [db [_ ns- comp]]
+   (let [canvas (r/dom-node comp)
+         ;; default map values (Sinop, MT, BR)
+         map-opts (clj->js {:center {:lat -11.855275, :lng -55.505966}
+                            :zoom 14
+                            :mapTypeid js/google.maps.MapTypeId.ROADMAP})
+         ;;; initialize google maps assets
+         heatmap (js/google.maps.visualization.HeatmapLayer.)
+         gmap (js/google.maps.Map. canvas map-opts)
+         info-window (js/google.maps.InfoWindow.)]
+     (-> db
+         (assoc-in (conj ns- :gmap) gmap)
+         (assoc-in (conj ns- :info-window) info-window)
+         (assoc-in (conj ns- :heatmap) heatmap)))))
+
 
 (rf/reg-sub :sync-lab/addresses query)
 
@@ -262,13 +275,36 @@
       [:input {:type :file
                :on-change #(rf/dispatch [:sync-lab/process-input-file (-> % .-target .-files (aget 0))])}]]]]])
 
+(rf/reg-sub :test query)
+
 (defn sync-lab-panel- []
   [:div.card
    [:div.header
     [:h4.title "Sync-lab"]]
    [:div.content
+    [pretty-display (rf/subscribe [:test])]
+    [:div
+     [:label
+      "checkbox1"
+      [input {:name :test.checkbox
+                  :type :checkbox
+                  :class "form-control"
+                  :value 1}]]
+     [:label
+      "checkbox2"
+      [input {:name :test.checkbox
+                  :type :checkbox
+                  :class "form-control"
+                  :value 2}]]
+     [:label
+      "checkbox3"
+      [input {:name :test.checkbox
+                  :type :checkbox
+                  :class "form-control"
+                  :value 3}]]]
+
     [upload-csv-file-form]
-    [map-comp]
+    ;[map-comp]
     [display-addresses]]])
 
 (defn sync-lab-panel []
