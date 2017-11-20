@@ -1,17 +1,17 @@
 # Criminal Analysis & Geoprocessing
 
-In law enforcement understanding how, where, and when crime happens goes a 
-long way to helping prevent similar crimes from happening in the future.
+In law enforcement understanding how, where, and when crime happens goes a
+long way to help prevent similar crimes in the future.
 
-Given that old school manual criminal analysis with Excel tables is very 
-boring, and the patterns and repetition present in this task, 
+Given that old school manual criminal analysis with Excel tables is very
+boring and ineffective, given the patterns and repetition present in this task,
 criminal analysis is a great candidate for automation.
 
 By adding geoprocessing to the equation we get a very user friendly system,
-as we can crunch an arbitrary chunk of data for the user with only a few inputs
+as we can process data for the user with only a few inputs
 
-With that we can give him a detailed summary with the statistics he needs 
-coupled with a visual representation of those statistics, greatly improving 
+With that we can give him a detailed summary with the statistics he needs
+coupled with a visual representation, greatly improving
 his comprehension and decision making.
 
 ## Features
