@@ -19,11 +19,12 @@
 ; Forms
 ; ------------------------------------------------------------------------------
 
+; Dependencies:
+; - a subscription named :query
+; - an event handler named :update-state
+; - an event handler named :set-state
+
 ; Helpers ----------------------------------------------------------------------
-(defn- keyword-or-int [x]
-  (if (int? (js/parseInt x))
-    (js/parseInt x)
-    (keyword x)))
 
 (defn- checkbox-input [attrs]
   (let [name (:name attrs)
@@ -37,9 +38,10 @@
                 :default (conj acc val))))
         attrs+defaults
         (-> attrs
-            (assoc :on-change
-                   (fn [comp]
-                     (rf/dispatch [:update-state ks f])))
+            (update :on-change
+                    #(or %
+                         (fn [comp]
+                           (rf/dispatch [:update-state ks f]))))
             (update :default-checked
                     #(or %
                          (when (contains? @acc (:value attrs))
@@ -84,15 +86,16 @@
         attrs-defaults
         (-> attrs
             (update :on-change
-                    #(or % (fn [comp] (rf/dispatch [:set-state ks (-> comp .-target .-value)])))))]
+                    #(or %
+                         (fn [comp]
+                           (rf/dispatch [:set-state ks (-> comp .-target .-value)])))))]
     (condp = (:type attrs)
            :checkbox [checkbox-input attrs]
            :radio [radio-input attrs-defaults]
            :number [number-input attrs-defaults]
 
            ;; default
-           (do (println "I'm default")
-               [:input attrs-defaults]))))
+           [:input attrs-defaults])))
 
 (defn textarea [attrs]
   (let [ks (extract-ns-and-name (:name attrs))

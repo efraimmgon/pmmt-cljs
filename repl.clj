@@ -1,4 +1,6 @@
+(in-ns 'pmmt.components.admin.sync-lab)
 
+@(rf/subscribe [:query :sync-lab.selected-addresses])
 
 
 ;; rebind conman connection

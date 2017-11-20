@@ -1,14 +1,19 @@
 (ns pmmt.utils
   (:require
    [clojure.string :as string]
+   [clojure.walk :as walk]
    [re-frame.core :as rf]))
 
 ; ------------------------------------------------------------------------------
 ; re-frame helpers
 ; ------------------------------------------------------------------------------
+(defn- keyword-or-int [x]
+  (if (int? (js/parseInt x))
+    (js/parseInt x)
+    (keyword x)))
 
 (defn extract-ns-and-name [k]
-  (mapv keyword
+  (mapv keyword-or-int
         (if (qualified-keyword? k)
           (into (string/split (namespace k) ".")
                 (string/split (name k) "."))
@@ -27,8 +32,45 @@
   (deref (rf/subscribe query-v)))
 
 ; ------------------------------------------------------------------------------
+; CSV utils
+; ------------------------------------------------------------------------------
+
+(defn csv->map
+  "Takes colls of csv data, the first being the headers.
+  Takes the headers row and assocs each keywordized header to its value."
+  [csv-data]
+  (let [[header & rows] csv-data]
+    (map (fn [row]
+           (-> (zipmap
+                (map (comp string/lower-case #(string/replace % #" " "-")) header)
+                row)
+               (walk/keywordize-keys)))
+         rows)))
+
+(defn to-csv- [colls]
+  (->> (map-indexed
+         (fn [i coll]
+           (string/join "," coll))
+         colls)
+       (string/join "\r\n")))
+
+(defn to-csv-string
+  "Takes colls and turn them into a csv string.
+  If the colls' values are maps, then one must provide the :with-headers option."
+  ([colls] (to-csv-string colls nil))
+  ([colls opts]
+   (if (:with-headers opts)
+     (to-csv-
+      (cons (map name (keys (first colls)))
+            (map vals colls)))
+     (to-csv- colls))))
+
+; ------------------------------------------------------------------------------
 ; misc
 ; ------------------------------------------------------------------------------
+
+(defn str->keyword [& s]
+  (keyword (apply str s)))
 
 (defn domap
   "Implementation of Common Lisp `mapc`. It is like `map` except that the
