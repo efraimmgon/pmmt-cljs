@@ -26,53 +26,27 @@
 
 ; Helpers ----------------------------------------------------------------------
 
-(defn- checkbox-input [attrs]
-  (let [name (:name attrs)
-        acc (rf/subscribe [:query name])
-        ks (extract-ns-and-name name)
-        f (fn [acc]
-            (let [val (:value attrs)]
-              (cond
-                (nil? acc) #{val}
-                (contains? acc val) (disj acc val)
-                :default (conj acc val))))
-        attrs+defaults
-        (-> attrs
-            (update :on-change
-                    #(or %
-                         (fn [comp]
-                           (rf/dispatch [:update-state ks f]))))
-            (update :default-checked
-                    #(or %
-                         (when (contains? @acc (:value attrs))
-                           true))))]
-    [:input attrs+defaults]))
+(defn- set-state [name]
+  (let [ks (extract-ns-and-name name)]
+    (fn [comp]
+      (rf/dispatch [:set-state ks (-> comp .-target .-value)]))))
 
-(defn- radio-input [attrs]
-  (let [name (:name attrs)
-        ks (extract-ns-and-name name)
-        attrs+defaults
-        (-> attrs
-            (assoc :on-change
-                   (fn [comp]
-                     (rf/dispatch [:set-state ks (:value attrs)]))))]
-    [:input attrs+defaults]))
+(defn- set-state-with-value [name val]
+  (let [ks (extract-ns-and-name name)]
+    (fn [comp]
+      (rf/dispatch [:set-state ks val]))))
 
-(defn- number-input [attrs]
-  (let [ks (extract-ns-and-name (:name attrs))
-        attrs+defaults
-        (-> attrs
-            (assoc :on-change
-                   (fn [comp]
-                     (rf/dispatch [:set-state ks (-> comp .-target .-value reader/read-string)]))))]
-    [:input attrs+defaults]))
+(defn- set-state-with-reader [name]
+  (let [ks (extract-ns-and-name name)]
+    (fn [comp]
+      (rf/dispatch [:set-state ks (-> comp .-target .-value reader/read-string)]))))
+
+(defn- update-state [name f]
+  (let [ks (extract-ns-and-name name)]
+    (fn [comp]
+      (rf/dispatch [:update-state ks f]))))
 
 ; Core -------------------------------------------------------------------------
-
-(defn form [& body]
-  (into
-   [:div]
-   body))
 
 (defn form-group [label & input]
   [:div.form-group
@@ -81,49 +55,74 @@
     [:div]
     input)])
 
-(defn input [attrs]
-  (let [ks (extract-ns-and-name (:name attrs))
-        attrs-defaults
-        (-> attrs
-            (update :on-change
-                    #(or %
-                         (fn [comp]
-                           (rf/dispatch [:set-state ks (-> comp .-target .-value)])))))]
-    (condp = (:type attrs)
-           :checkbox [checkbox-input attrs]
-           :radio [radio-input attrs-defaults]
-           :number [number-input attrs-defaults]
+(defmulti input
+  "Input component for `:type`s -> :checkbox, :radio, :number, and :text"
+  (fn [attrs] (:type attrs)))
 
-           ;; default
-           [:input attrs-defaults])))
+(defmethod input :text
+  [attrs]
+  (let [edited-attrs (update attrs :on-change #(or % (set-state (:name attrs))))]
+    [:input edited-attrs]))
+
+; Use of `cljs.reader/read-string` to coerce the e.target.value to number.
+; I'm sure there's a better way of doing this, but I haven't figured it out yet.
+(defmethod input :number
+  [attrs]
+  (let [edited-attrs (update attrs :on-change #(or % (set-state-with-reader (:name attrs))))]
+    [:input edited-attrs]))
+
+; By default the checkbox state is designed to be stored in a single set.
+; By default we figure out if the checkbox is checked based on its value's
+; presence in that set.
+; To override this behavior one must roll their own :on-change and :checked
+; attributes.
+(defmethod input :checkbox
+  [attrs]
+  (let [acc (rf/subscribe [:query (:name attrs)])
+        f (fn [acc]
+            (let [val (:value attrs)]
+              (cond
+                (nil? acc) #{val}
+                (contains? acc val) (disj acc val)
+                :default (conj acc val))))
+        edited-attrs
+        (-> attrs
+            (update :on-change #(or % (update-state (:name attrs) f)))
+            (update :checked
+                    #(or %
+                         (when (contains? @acc (:value attrs))
+                           true))))]
+    [:input edited-attrs]))
+
+; The :value attribute is used so we don't need to bother coercing the
+; e.target.value to its original type.
+(defmethod input :radio
+  [attrs]
+  (let [edited-attrs (assoc attrs :on-change #(or % (set-state-with-value (:name attrs) (:value attrs))))]
+    [:input edited-attrs]))
 
 (defn textarea [attrs]
-  (let [ks (extract-ns-and-name (:name attrs))
-        attrs-defaults
-        (-> attrs
-            (update :on-change
-                    #(or % (fn [comp] (rf/dispatch [:set-state ks (-> comp .-target .-value)])))))]
-    [:textarea attrs-defaults]))
+  (let [edited-attrs (update attrs :on-change #(or % (set-state (:name attrs))))]
+    [:textarea edited-attrs]))
 
-;;; with the current implementation it does not support options with
-;;; strings as values.
+; With the current implementation I dont' think it does not support options
+; with strings because `cljs.reader/read-string` returns them as symbols.
 (defn select [attrs & options]
   (let [ks (extract-ns-and-name (:name attrs))
+        ;; get the :value of this first option component
         default-val (-> options ffirst second :value)
-        attrs-defaults
+        edited-attrs
         (-> attrs
-            ;; `(-> % .-target .-value)` returns strings no matter what
-            ;; we're trying to do go around that
-            (update :on-change
-                    #(or %
-                         (fn [comp]
-                           (rf/dispatch [:set-state ks (-> comp .-target .-value reader/read-string)]))))
+            (update :on-change #(or % (set-state-with-reader (:name attrs))))
+            ;; If the select has a default value we must persist it, otherwise
+            ;; we set it to the first option's value.
             (update :value
-                    #(or %
+                    #(or (and % (do (rf/dispatch [:set-state ks %])
+                                    %))
                          (do (rf/dispatch [:set-state ks default-val])
                              default-val))))]
     (into
-     [:select attrs-defaults]
+     [:select edited-attrs]
      options)))
 
 ; ------------------------------------------------------------------------------

@@ -22,25 +22,30 @@
 ; ------------------------------------------------------------------------------
 
 (defn addresses-actions [addresses]
-  [:div
-   [:button.btn.btn-info
-    {:on-click #(rf/dispatch [:sync-lab/select-all-addresses])}
-    (if (<sub [:sync-lab/all-selected?])
-      "Deselect all"
-      "Select all")] " "
-   [:button.btn.btn-primary
-    {:on-click #(rf/dispatch [:sync-lab/geocode])}
-    "Geocode selected"] " "
-   [:button.btn.btn-default
-    {:on-click #(rf/dispatch [:sync-lab/map-selected-addresses])}
-    "Show selected on map"] " "
-   [:button.btn.btn-danger
-    {:on-click #(rf/dispatch [:sync-lab/clear-map])}
-    "Clear map"] " "
-   [:a.btn.btn-success
-    {:href (<sub [:sync-lab/downloadable-addresses-url])
-     :download "bairros+ruas+lat+lng.csv"}
-    "Download data"]])
+  (r/with-let [selected (rf/subscribe [:sync-lab/selected-addresses])
+               markers (rf/subscribe [:sync-lab/markers])]
+    [:div
+     [:button.btn.btn-info
+      {:on-click #(rf/dispatch [:sync-lab/select-all-addresses])}
+      (if (<sub [:sync-lab/all-selected?])
+        "Deselect all"
+        "Select all")] " "
+     [:button.btn.btn-primary
+      {:on-click #(rf/dispatch [:sync-lab/geocode])
+       :class (when (empty? @selected) "disabled")}
+      "Geocode selected"] " "
+     [:button.btn.btn-default
+      {:on-click #(rf/dispatch [:sync-lab/map-selected-addresses])
+       :class (when (empty? @selected) "disabled")}
+      "Show selected on map"] " "
+     [:button.btn.btn-danger
+      {:on-click #(rf/dispatch [:sync-lab/clear-map])
+       :class (when (empty? @markers) "disabled")}
+      "Clear map"] " "
+     [:a.btn.btn-success
+      {:href (<sub [:sync-lab/downloadable-addresses-url])
+       :download "bairros+ruas+lat+lng.csv"}
+      "Download table data"]]))
 
 (defn addresses-table [addresses]
   [:table.table.table-striped

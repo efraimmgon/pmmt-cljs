@@ -197,11 +197,13 @@
 
 (rf/reg-sub :sync-lab/addresses query)
 
+(rf/reg-sub :sync-lab/markers query)
+
 (rf/reg-sub
  :sync-lab/selected-addresses
- :<- [:sync-lab]
- (fn [sync-lab]
-   (filter :selected? (:addresses sync-lab))))
+ :<- [:sync-lab/addresses]
+ (fn [addresses]
+   (filter :selected? addresses)))
 
 (rf/reg-sub
  :sync-lab/all-selected?
