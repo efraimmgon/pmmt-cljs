@@ -1,6 +1,6 @@
 (ns pmmt.subs
   (:require
-   [pmmt.utils :refer [extract-ns-and-name]]
+   [pmmt.utils :refer [extract-ns+name]]
    [re-frame.core :refer [reg-sub]]))
 
 ; helpers ---------------------------------------------------------
@@ -9,7 +9,7 @@
   (get db event))
 
 (defn query-sub [db [event ns+name]]
-  (get-in db (extract-ns-and-name ns+name)))
+  (get-in db (extract-ns+name ns+name)))
 
 (defn format-opts [options value-key display-key]
   (into []

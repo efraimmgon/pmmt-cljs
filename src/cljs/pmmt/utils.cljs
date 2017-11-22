@@ -12,12 +12,17 @@
     (js/parseInt x)
     (keyword x)))
 
-(defn extract-ns-and-name [k]
+(defn extract-ns+name [k]
   (mapv keyword-or-int
         (if (qualified-keyword? k)
           (into (string/split (namespace k) ".")
                 (string/split (name k) "."))
           (string/split (name k) "."))))
+
+(defn make-keys [x]
+  (if (vector? x)
+    x
+    (extract-ns+name x)))
 
 (defn query
   "Meant to be used with a rf/reg-sub. Takes a `db` map and an event-id from
@@ -25,7 +30,7 @@
    Ids are namespaced by `.`, eg: `admin.background-image` or as qualified
    keywords, eg: `admin.views/background-image`"
   [db [event-id]]
-  (let [event-ks (extract-ns-and-name event-id)]
+  (let [event-ks (extract-ns+name event-id)]
     (get-in db event-ks)))
 
 (defn <sub [query-v]

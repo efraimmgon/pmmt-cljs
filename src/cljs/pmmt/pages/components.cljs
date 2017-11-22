@@ -1,7 +1,7 @@
 (ns pmmt.pages.components
   (:require
    [cljs.reader :as reader]
-   [pmmt.utils :refer [extract-ns-and-name <sub]]
+   [pmmt.utils :refer [make-keys <sub]]
    [reagent.core :as r :refer [atom]]
    [re-frame.core :as rf]))
 
@@ -26,23 +26,23 @@
 
 ; Helpers ----------------------------------------------------------------------
 
-(defn- set-state [name]
-  (let [ks (extract-ns-and-name name)]
+(defn set-state [ns+name]
+  (let [ks (make-keys ns+name)]
     (fn [comp]
       (rf/dispatch [:set-state ks (-> comp .-target .-value)]))))
 
-(defn- set-state-with-value [name val]
-  (let [ks (extract-ns-and-name name)]
+(defn set-state-with-value [ns+name val]
+  (let [ks (make-keys ns+name)]
     (fn [comp]
       (rf/dispatch [:set-state ks val]))))
 
-(defn- set-state-with-reader [name]
-  (let [ks (extract-ns-and-name name)]
+(defn set-state-with-reader [ns+name]
+  (let [ks (make-keys ns+name)]
     (fn [comp]
       (rf/dispatch [:set-state ks (-> comp .-target .-value reader/read-string)]))))
 
-(defn- update-state [name f]
-  (let [ks (extract-ns-and-name name)]
+(defn update-state [ns+name f]
+  (let [ks (make-keys ns+name)]
     (fn [comp]
       (rf/dispatch [:update-state ks f]))))
 
@@ -108,7 +108,7 @@
 ; With the current implementation I dont' think it does not support options
 ; with strings because `cljs.reader/read-string` returns them as symbols.
 (defn select [attrs & options]
-  (let [ks (extract-ns-and-name (:name attrs))
+  (let [ks (make-keys (:name attrs))
         ;; get the :value of this first option component
         default-val (-> options ffirst second :value)
         edited-attrs

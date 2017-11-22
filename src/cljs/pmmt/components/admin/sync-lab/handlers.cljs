@@ -4,6 +4,7 @@
    [goog.labs.format.csv :as csv]
    [pmmt.gmaps :refer [clear-markers! create-marker!]]
    [pmmt.utils :refer [csv->map query to-csv-string <sub]]
+   [pmmt.utils.geocoder :as geocoder]
    [reagent.core :as r]
    [re-frame.core :as rf]))
 
@@ -19,7 +20,15 @@
   (filter markable-address? addrs))
 
 
+(defn geocoder-request-address [address]
+  (str (:logr-tipo address) " "
+       (:logr address) ", "
+       (:bairro address) ", "
+       " Sinop - MT, Brasil"))
+
 ; gMaps getters ----------------------------------------------------------------
+
+
 
 (defn formatted-address [GeocoderResult]
   (-> GeocoderResult (get 0) .-formatted_address))
@@ -92,13 +101,28 @@
    (clear-markers! (<sub [:query :sync-lab.markers]))
    (assoc-in db [:sync-lab :markers] [])))
 
+; (rf/reg-event-db
+;  :sync-lab/geocode
+;  (fn [db _]
+;    (->> (<sub [:sync-lab/selected-addresses])
+;         (filter markable-addresses)
+;         run-geocode)
+;    (assoc-in db [:sync-lab :geocode :ready?] true)))
+
 (rf/reg-event-db
  :sync-lab/geocode
  (fn [db _]
-   (->> (<sub [:sync-lab/selected-addresses])
-        (filter markable-addresses)
-        run-geocode)
-   (assoc-in db [:sync-lab :geocode :ready?] true)))
+   (let [addresses (<sub [:sync-lab/selected-addresses])
+         formatted-addresses (map geocoder-request-address addresses)
+         ok (fn [GeocoderResult]
+              (let [ks [:sync-lab :addresses (:id address)]]
+                (set-state-with-value (conj ks :lat) (geocoder/lat GeocoderResult))
+                (set-state-with-value (conj ks :lng) (geocoder/lng GeocoderResult))
+                (set-state-with-value (conj ks :found) (geocoder/formatted-address GeocoderResult))))]
+     (geocoder/geocode-addresses
+      formatted-addresses {:ok ok})
+     (assoc-in db [:sync-lab :geocode :ready?] true))))
+
 
 ; As we load new addresses we want to clear the markers from the map,
 ; since they represent the previously loaded data.
