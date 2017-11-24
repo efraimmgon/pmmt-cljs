@@ -1,4 +1,6 @@
-(ns pmmt.utils.geocoder)
+(ns pmmt.utils.geocoder
+  (:require
+   [clojure.string :as string]))
 
 ; JS Dependencies:
 ; - js/google.maps.Geocoder
@@ -15,6 +17,34 @@
 
 (defn lng [GeocoderResult]
   (-> GeocoderResult (get 0) .-geometry .-location .lng))
+
+
+(defn maybe-return [& args]
+  (when (first args)
+    (apply str args)))
+
+(defn join-address-components [sep coll]
+  (->> coll
+       (remove nil?)
+       (string/join sep)))
+
+(defn geocoder-request-address
+  [{:keys [route-type route route-number neighborhood
+           city state country zip-code]}]
+  (let [one (join-address-components " "
+             [(maybe-return route-type)
+              (maybe-return route)])
+        two (join-address-components ", "
+             [(maybe-return route-number)
+              (maybe-return neighborhood)
+              (maybe-return city)
+              (maybe-return state)
+              (maybe-return country)
+              (maybe-return zip-code)])]
+    (string/join ", " [one two])))
+    ; (string/join ", "
+    ;  (concat one two))))
+
 
 ; ------------------------------------------------------------------------------
 ; Core
@@ -36,18 +66,21 @@
 (defn geocode-address
   "Uses `js/google.maps.Geocoder` to geocode an address
     args:
-    - address => a String
+    - address => a map with keys:
+        > #{route-type route route-number neighborhood
+            city state country zip-code}
     - #{:ok :query-limit :zero-results}
         > handlers
         > Take a GeocoderResult as arg"
   [{:keys [address ok query-limit zero-results]}]
   (let [geocoder (new js/google.maps.Geocoder)
-        opts (clj->js {:address address})
+        formatted-address (geocoder-request-address address)
+        opts (clj->js {:address formatted-address})
         query-limit (or query-limit #(println "OVER_QUERY_LIMIT"))
-        zero-results (or zero-results #(println "ZERO RESULTS for: " address))
+        zero-results (or zero-results #(println "ZERO RESULTS for: " formatted-address))
         handler (fn [GeocoderResult status]
                   (condp = status
-                         "OK" (ok GeocoderResult)
+                         "OK" (ok GeocoderResult address)
                          "OVER_QUERY_LIMIT" (query-limit GeocoderResult)
                          "ZERO_RESULTS" (zero-results GeocoderResult)
                          ;; default
@@ -58,7 +91,7 @@
   "Applies geocode-address to each address given, making sure gmap's API
    policies are followed.
   args:
-  - addresses => a vector of strings
+  - addresses => a vector of maps according to `geocode-address` requirements
   - handlers =>
       > handlers for #{:done :ok :query-limit :zero-results}
       > #{:ok :query-limit :zero-results} => take a GeocoderResult as arg"
@@ -73,9 +106,10 @@
               ; NOTE: <implementatian simplicity> each `n` queries we wait
               ;       for 5 seconds before continuing execution so we don't
               ;       exceed our 50 queries/s limit.
-              (= queries 20)
+              (= queries 10)
               (js/setTimeout
-               #(f addresses 0 query-limit?))
+               #(f addresses 0 query-limit?)
+               5000)
 
               ; still addresses left to geocode?
               (seq addresses)

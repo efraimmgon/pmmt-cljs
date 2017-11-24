@@ -3,7 +3,8 @@
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
 
-  :dependencies [[bouncer "1.0.0"]
+  :dependencies [[binaryage/oops "0.5.6"]
+                 [bouncer "1.0.0"]
                  [buddy "1.1.0"]
                  [clj-pdf "2.2.29"]
                  [clj-time "0.12.0"]

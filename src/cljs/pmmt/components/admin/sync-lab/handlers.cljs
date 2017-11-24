@@ -3,6 +3,7 @@
    [clojure.string :as string]
    [goog.labs.format.csv :as csv]
    [pmmt.gmaps :refer [clear-markers! create-marker!]]
+   [pmmt.pages.components :refer [set-state-with-value]]
    [pmmt.utils :refer [csv->map query to-csv-string <sub]]
    [pmmt.utils.geocoder :as geocoder]
    [reagent.core :as r]
@@ -18,13 +19,6 @@
 
 (defn markable-addresses [addrs]
   (filter markable-address? addrs))
-
-
-(defn geocoder-request-address [address]
-  (str (:logr-tipo address) " "
-       (:logr address) ", "
-       (:bairro address) ", "
-       " Sinop - MT, Brasil"))
 
 ; gMaps getters ----------------------------------------------------------------
 
@@ -113,12 +107,21 @@
  :sync-lab/geocode
  (fn [db _]
    (let [addresses (<sub [:sync-lab/selected-addresses])
-         formatted-addresses (map geocoder-request-address addresses)
-         ok (fn [GeocoderResult]
+         formatted-addresses
+         (map (fn [{:keys [id logr-tipo logr bairro]}]
+                {:id id
+                 :route-type logr-tipo
+                 :route logr
+                 :neighborhood bairro
+                 :city "Sinop"
+                 :state "MT"
+                 :country "Brasil"})
+              addresses)
+         ok (fn [GeocoderResult address]
               (let [ks [:sync-lab :addresses (:id address)]]
-                (set-state-with-value (conj ks :lat) (geocoder/lat GeocoderResult))
-                (set-state-with-value (conj ks :lng) (geocoder/lng GeocoderResult))
-                (set-state-with-value (conj ks :found) (geocoder/formatted-address GeocoderResult))))]
+                ((set-state-with-value (conj ks :lat) (geocoder/lat GeocoderResult)))
+                ((set-state-with-value (conj ks :lng) (geocoder/lng GeocoderResult)))
+                ((set-state-with-value (conj ks :found) (geocoder/formatted-address GeocoderResult)))))]
      (geocoder/geocode-addresses
       formatted-addresses {:ok ok})
      (assoc-in db [:sync-lab :geocode :ready?] true))))
@@ -211,8 +214,6 @@
      (set-selected-addresses db nil)
      (set-selected-addresses db true))))
 
-(rf/reg-sub :sync-lab/addresses query)
-
 (rf/reg-sub :sync-lab/gmap query)
 
 (rf/reg-sub :sync-lab/info-window query)
@@ -243,6 +244,6 @@
      (js/Blob.
       (clj->js
        [(to-csv-string
-         (map #(select-keys % [:bairro :via :lat :lng]) addresses)
+         (map #(select-keys % [:bairro :logr-tipo :logr :lat :lng]) addresses)
          {:with-headers true})])
       (clj->js {:type "text/csv"})))))

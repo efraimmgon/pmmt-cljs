@@ -1,7 +1,9 @@
-(in-ns 'pmmt.components.admin.sync-lab)
+(in-ns 'pmmt.utils.geocoder)
 
 @(rf/subscribe [:query :sync-lab.selected-addresses])
 
+
+(geocoder-request-address {:route-type "Rua" :route "Ouro Preto" :country "Brasil"})
 
 ;; rebind conman connection
 (in-ns 'pmmt.db.core)
