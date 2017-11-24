@@ -20,71 +20,6 @@
 (defn markable-addresses [addrs]
   (filter markable-address? addrs))
 
-; gMaps getters ----------------------------------------------------------------
-
-
-
-(defn formatted-address [GeocoderResult]
-  (-> GeocoderResult (get 0) .-formatted_address))
-
-(defn lat [GeocoderResult]
-  (-> GeocoderResult (get 0) .-geometry .-location .lat))
-
-(defn lng [GeocoderResult]
-  (-> GeocoderResult (get 0) .-geometry .-location .lng))
-
-
-(defn assoc-geocoder-request [address]
-  (assoc address :address
-   (str (:logr-tipo address) " "
-        (:logr address) ", "
-        (:bairro address) ", "
-        " Sinop - MT, Brasil")))
-
-(defn update-lat-lng [GeocoderResult address]
-  (let [ks [:sync-lab :addresses (:id address)]]
-    (rf/dispatch [:set-state (conj ks :lat) (lat GeocoderResult)])
-    (rf/dispatch [:set-state (conj ks :lng) (lng GeocoderResult)])
-    (rf/dispatch [:set-state (conj ks :found) (formatted-address GeocoderResult)])))
-
-(defn geocode
-  "Use `js/google.maps.Geocoder` to geocode an address"
-  [address query-limit?]
-  (let [geocoder (new js/google.maps.Geocoder)
-        opts (clj->js (select-keys address [:address]))
-        handler (fn [GeocoderResult status]
-                  (condp = status
-                         "OK" (update-lat-lng GeocoderResult address)
-                         "OVER_QUERY_LIMIT" (reset! query-limit? true)
-                         "ZERO_RESULTS" (println "ZERO RESULTS => " address)
-                         ;; default
-                         (println status)))]
-    (.geocode geocoder opts handler)))
-
-(defn run-geocode
-  "Applies geocode to each address given, making sure gmap's API
-   policies are followed."
-  ([addresses]
-   (run-geocode addresses {:queries 0, :query-limit? (atom false)}))
-  ([addresses {:keys [queries, start, query-limit?] :as control}]
-   (cond
-     @query-limit? (js/alert "OVER_QUERY_LIMIT")
-
-     ;; NOTE: <implementatian simplicity> each `n` queries we wait
-     ;;       for 5 seconds before continuing execution so we don't
-     ;;       exceed our 50 queries/s limit.
-     (= queries 20)
-     (js/setTimeout
-      #(run-geocode addresses (assoc control :queries 0))
-      10000)
-
-     (seq addresses)
-     (do (geocode (assoc-geocoder-request (first addresses)) query-limit?)
-         (run-geocode (rest addresses) (assoc control :queries (inc (:queries control)))))
-
-     (empty? addresses)
-     (js/alert "Fini!"))))
-
 ; ------------------------------------------------------------------------------
 ; Handlers
 ; ------------------------------------------------------------------------------
@@ -94,14 +29,6 @@
  (fn [db _]
    (clear-markers! (<sub [:query :sync-lab.markers]))
    (assoc-in db [:sync-lab :markers] [])))
-
-; (rf/reg-event-db
-;  :sync-lab/geocode
-;  (fn [db _]
-;    (->> (<sub [:sync-lab/selected-addresses])
-;         (filter markable-addresses)
-;         run-geocode)
-;    (assoc-in db [:sync-lab :geocode :ready?] true)))
 
 (rf/reg-event-db
  :sync-lab/geocode
