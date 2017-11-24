@@ -6,7 +6,7 @@
    [clojure.string :as string]
    [reagent.core :as r]
    [re-frame.core :refer [dispatch reg-event-db reg-event-fx reg-sub]]
-   [pmmt.charts :refer [chart-opts]]
+   [pmmt.utils.charts :refer [chart-opts]]
    [pmmt.subs :refer [query]]))
 
 ; -------------------------------------------------------------------------

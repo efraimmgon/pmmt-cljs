@@ -1,4 +1,4 @@
-(ns pmmt.charts)
+(ns pmmt.utils.charts)
 
 (def colors
   ["#001f3f" ; navy

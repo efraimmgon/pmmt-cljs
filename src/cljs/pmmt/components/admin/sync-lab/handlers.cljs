@@ -2,7 +2,7 @@
   (:require
    [clojure.string :as string]
    [goog.labs.format.csv :as csv]
-   [pmmt.gmaps :refer [clear-markers! create-marker!]]
+   [pmmt.utils.gmaps :refer [clear-markers! create-marker!]]
    [pmmt.pages.components :refer [set-state-with-value]]
    [pmmt.utils :refer [csv->map query to-csv-string <sub]]
    [pmmt.utils.geocoder :as geocoder]

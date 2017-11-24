@@ -1,4 +1,4 @@
-(ns pmmt.gmaps)
+(ns pmmt.utils.gmaps)
 
 ; ------------------------------------------------------------------------------
 ; JavaScript dependencies:
