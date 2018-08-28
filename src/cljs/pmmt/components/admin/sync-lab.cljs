@@ -21,15 +21,68 @@
 ; Views
 ; ------------------------------------------------------------------------------
 
-(defn addresses-actions [addresses]
+; ------------------------------------------------------------------------------
+; Pager
+
+(defn forward
+  "Tick current page forward."
+  [i pages]
+  (if (< i (dec pages))
+    (inc i)
+    i))
+
+(defn back
+  "Tick current page backward-"
+  [i]
+  (if (pos? i)
+    (dec i)
+    i))
+
+(defn nav-link
+  "Renders the pager link to a page."
+  [page i]
+  [:li.page-item {:class (when (= i @page) "active")}
+   [:a.page-link
+    {:on-click #(reset! page i)
+     :href "#"}
+    [:span i]]])
+
+(defn pager
+  "pager (pagination) component.
+  Takes the page count and current page."
+  [page-count page]
+  (when (> page-count 1)
+    (into
+      [:div.text-xs-center>ul.pagination]
+      (concat
+        ;; back button
+        [[:li.page-item>a.page-link
+          {:on-click #(swap! page back page-count)
+           :class (when (= @page 0) "disabled")}
+          [:span "<<"]]]
+        ;; navigation links for the range of page count
+        (map (partial nav-link page) (range page-count))
+        ;; forward button
+        [[:li.page-item>a.page-link
+          {:on-click #(swap! page forward page-count)
+           :class (when (= @page (dec page-count)) "disabled")}
+          [:span ">>"]]]))))
+
+; ------------------------------------------------------------------------------
+; Addresses table
+
+(defn addresses-actions []
   (r/with-let [selected (rf/subscribe [:sync-lab/selected-addresses])
                markers (rf/subscribe [:sync-lab/markers])]
     [:div
      [:button.btn.btn-info
-      {:on-click #(rf/dispatch [:sync-lab/select-all-addresses])}
+      {:on-click #(rf/dispatch [:sync-lab/toggle-selected-addresses])}
       (if (<sub [:sync-lab/all-selected?])
         "Deselect all"
         "Select all")] " "
+     [:button.btn.btn-info
+      {:on-click #(rf/dispatch [:sync-lab/select-current-page])}
+      "Select current page"] " "
      [:button.btn.btn-primary
       {:on-click #(rf/dispatch [:sync-lab/geocode])
        :class (when (empty? @selected) "disabled")}
@@ -52,68 +105,75 @@
    [c/thead ["Select" "Bairro" "Tipo de logradouro" "Logradouro" "Latitude" "Longitude" "Show on map"]]
    [:tbody
     (doall
-      (map-indexed
-       (fn [i row]
-        (let [ns- (str "sync-lab.addresses." i ".")]
-          ^{:key (:id row)}
-          [:tr
-           [:td
-            [input {:type :checkbox
-                    :name (str->keyword ns- "selected?")
-                    :class "form-control"
-                    :on-change #(rf/dispatch [:update-state [:sync-lab :addresses i :selected?] not])
-                    :checked (:selected? row)
-                    :value (:id row)}]]
-           [:td.text-center
-            [input {:type :text,
-                    :name (str->keyword ns- "bairro")
-                    :class "form-control"
-                    :value (:bairro row)}]]
-           [:td.text-center
-            [input {:type :text,
-                    :name (str->keyword ns- "logr-tipo")
-                    :class "form-control"
-                    :value (:logr-tipo row)}]]
-           [:td.text-center
-            [input {:type :text,
-                    :name (str->keyword ns- "logr")
-                    :class "form-control"
-                    :value (:logr row)}]]
-           [:td.text-center
-            [input {:type :number,
-                    :name (str->keyword ns- "lat")
-                    :class "form-control"
-                    :value (:lat row)}]]
-           [:td.text-center
-            [input {:type :number,
-                    :name (str->keyword ns- "lng")
-                    :class "form-control"
-                    :value (:lng row)}]]
-           [:td
-            [:button.btn.btn-default
-             {:on-click #(rf/dispatch
-                          [:sync-lab/create-markers
-                           [(if (markable-address? row)
-                              row
-                              (add-default-position row))]])}
-             "Show on map"]]]))
-       @addresses))]])
+      (for [[i row] (map vector (range) addresses)
+            :let [ns- (str "sync-lab.addresses." i ".")]]
+        ^{:key (:id row)}
+        [:tr
+         [:td
+          [input {:type :checkbox
+                  :name (str->keyword ns- "selected?")
+                  :class "form-control"
+                  :on-change #(rf/dispatch [:update-state [:sync-lab :addresses i :selected?] not])
+                  :checked (:selected? row)
+                  :value (:id row)}]]
+         [:td.text-center
+          [input {:type :text,
+                  :name (str->keyword ns- "bairro")
+                  :class "form-control"
+                  :value (:bairro row)}]]
+         [:td.text-center
+          [input {:type :text,
+                  :name (str->keyword ns- "logr-tipo")
+                  :class "form-control"
+                  :value (:logr-tipo row)}]]
+         [:td.text-center
+          [input {:type :text,
+                  :name (str->keyword ns- "logr")
+                  :class "form-control"
+                  :value (:logr row)}]]
+         [:td.text-center
+          [input {:type :number,
+                  :name (str->keyword ns- "lat")
+                  :class "form-control"
+                  :value (:lat row)}]]
+         [:td.text-center
+          [input {:type :number,
+                  :name (str->keyword ns- "lng")
+                  :class "form-control"
+                  :value (:lng row)}]]
+         [:td
+          [:button.btn.btn-default
+           {:on-click #(rf/dispatch
+                        [:sync-lab/create-markers
+                         [(if (markable-address? row)
+                            row
+                            (add-default-position row))]])}
+           "Show on map"]]]))]])
 
 (defn addresses-component []
-  (r/with-let [addresses (rf/subscribe [:sync-lab/addresses])
+  (r/with-let [;addresses (rf/subscribe [:sync-lab/addresses])
+               partitioned-addresses (rf/subscribe [:sync-lab/partitioned-addresses])
                markers (rf/subscribe [:query :sync-lab.markers])
-               gMap (rf/subscribe [:query :sync-lab.gmap])]
+               gMap (rf/subscribe [:query :sync-lab.gmap])
+               current-page (atom 0)]
     ; The google maps canvas is initialized every time the component is
     ; reloaded, losing all data. We set the saved marker instances to the
     ; saved gmap instance to display them.
     (when (seq @markers)
       (doseq [marker @markers]
         (.setMap marker @gMap)))
-    (when @addresses
-      [:div.card
-       [:div.content
-        [addresses-actions addresses]
-        [addresses-table addresses]]])))
+    ;; Need to call `vec`, since we'll be calling `nth` on it
+    (when (seq @partitioned-addresses)
+      (let [partitioned (vec (partition-all 50 @partitioned-addresses))]
+        [:div.card
+         [:div.content
+          [addresses-actions]
+          [pager (count partitioned) current-page]
+          [addresses-table (get partitioned @current-page)]
+          [pager (count partitioned) current-page]]]))))
+
+; ------------------------------------------------------------------------------
+; Comps
 
 (defn map-comp []
   (r/create-class
@@ -129,9 +189,12 @@
     [:div.row>div.col-md-12
      [:label "Upload a csv file"
       [:input {:type :file
-               :on-change #(rf/dispatch [:sync-lab/process-input-file (-> % .-target .-files (aget 0))])}]]]]])
+               :on-change #(rf/dispatch [:sync-lab/process-input-file
+                                         (-> % .-target .-files (aget 0))])}]]]]])
 
-(defn sync-lab-panel- []
+(defn sync-lab-panel-
+  "Main component's content."
+  []
   [:div.card
    [:div.header
     [:h4.title "Sync-lab"]]
@@ -140,11 +203,17 @@
     [map-comp]
     [addresses-component]]])
 
-(defn sync-lab-panel []
+(defn sync-lab-panel
+  "Main component."
+  []
   (r/with-let [google-api-key (rf/subscribe [:settings/google-api-key])]
-    [c/js-loader
-     {:scripts {#(exists? js/google) (str "https://maps.googleapis.com/maps/api/js?"
-                                          "key=" @google-api-key
-                                          "&libraries=geometry,visualization")}
-      :loading [:div.loading "Loading..."]
-      :loaded [sync-lab-panel-]}]))
+    (try
+      [c/js-loader
+       {:scripts {#(exists? js/google) (str "https://maps.googleapis.com/maps/api/js?"
+                                            "key=" @google-api-key
+                                            "&libraries=geometry,visualization")}
+        :loading [:div.loading "Loading..."]
+        :loaded [sync-lab-panel-]}]
+      (catch goog.net.jsloader.Error e
+        (js/console.log (.message e))))))
+        

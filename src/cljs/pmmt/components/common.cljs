@@ -1,7 +1,8 @@
 (ns pmmt.components.common
   (:require
    [dommy.core :as dommy :refer-macros [sel sel1]]
-   [goog.net.jsloader :as jsl]
+   [goog.net.jsloader :as jsloader]
+   [goog.html.TrustedResourceUrl]
    [reagent.core :as r :refer [atom]]
    [re-frame.core :refer [dispatch]]))
 
@@ -290,7 +291,11 @@
 
 (defn filter-loaded [scripts]
   (reduce (fn [acc [loaded? src]]
-            (if (loaded?) acc (conj acc src)))
+            (if (loaded?) 
+              acc 
+              (conj acc
+                    (goog.html.TrustedResourceUrl/fromConstant 
+                      (goog.string/Const.from src)))))
           []
           scripts))
 
@@ -305,10 +310,14 @@
   [{:keys [scripts loading loaded]}]
   (let [loaded? (atom false)]
     (r/create-class
-     {:component-did-mount (fn [_]
-                             (let [not-loaded (clj->js (filter-loaded scripts))]
-                               (.then (jsl/loadMany not-loaded)
-                                      #(do (js/console.info "Loaded:" not-loaded)
-                                           (reset! loaded? true)))))
-      :reagent-render (fn [{:keys [scripts loading loaded]}]
-                        (if @loaded? loaded loading))})))
+     {:component-did-mount 
+      (fn [_]
+         (let [not-loaded (clj->js (filter-loaded scripts))]
+           (.then (jsloader/safeLoadMany 
+                    not-loaded)
+                  #(do (doseq [x not-loaded]
+                         (js/console.info "Loaded:" (.toString x)))
+                       (reset! loaded? true)))))
+      :reagent-render 
+      (fn [{:keys [scripts loading loaded]}]
+        (if @loaded? loaded loading))})))

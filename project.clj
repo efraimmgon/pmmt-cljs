@@ -3,8 +3,7 @@
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
 
-  :dependencies [[binaryage/oops "0.5.6"]
-                 [bouncer "1.0.0"]
+  :dependencies [[bouncer "1.0.0"]
                  [buddy "1.1.0"]
                  [clj-pdf "2.2.29"]
                  [clj-time "0.12.0"]
@@ -13,6 +12,7 @@
                  [cljsjs/google-maps "3.18-1"]
                  [cljsjs/jquery "3.2.1-0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
+                 [com.cognitect/transit-java "0.8.337"]
                  [compojure "1.5.1"]
                  [conman "0.6.7"]
                  [cprop "0.1.9"]
@@ -25,7 +25,7 @@
                  [metosin/compojure-api "1.1.8"]
                  [mount "0.1.10"]
                  [org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.9.229" :scope "provided"]
+                 [org.clojure/clojurescript "1.10.339" :scope "provided"]
                  [org.clojure/data.csv "0.1.3"]
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/tools.logging "0.3.1"]
@@ -104,7 +104,8 @@
                                  [doo "0.1.7"]
                                  [binaryage/devtools "0.8.2"]
                                  [figwheel-sidecar "0.5.8"]
-                                 [com.cemerick/piggieback "0.2.2-SNAPSHOT"]]
+                                 [com.cemerick/piggieback "0.2.2-SNAPSHOT"]
+                                 [org.clojure/tools.trace "0.7.9"]]
                   :plugins      [[com.jakemccrary/lein-test-refresh "0.14.0"]
                                  [lein-doo "0.1.7"]
                                  [lein-figwheel "0.5.8"]

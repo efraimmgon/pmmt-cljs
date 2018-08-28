@@ -24,6 +24,57 @@
 ; Handlers
 ; ------------------------------------------------------------------------------
 
+(defn set-selected-addresses [db val]
+  (update-in db [:sync-lab :addresses]
+    #(mapv (fn [row] (assoc row :selected? val))
+          %)))
+
+(rf/reg-event-db
+ :sync-lab/toggle-selected-addresses
+ (fn [db _]
+   (if (<sub [:sync-lab/all-selected?])
+     (set-selected-addresses db nil)
+     (set-selected-addresses db true))))
+
+(rf/reg-event-db
+ :sync-lab/select-current-page
+ (fn [db _]
+   (let [current-page (<sub [:sync-lab/current-page])
+         partitioned-addresses (<sub [:sync-lab/partitioned-addresses])]
+     ())))
+
+
+; ------------------------------------------------------------------------------
+; File Processing
+
+(rf/reg-event-db
+ :sync-lab/load-addresses
+ (fn [db [_ csv-data]]
+   ;; As we load new addresses we want to clear the markers from the map,
+   ;; since they represent the previously loaded data.
+   (clear-markers! (<sub [:query :sync-lab.markers]))
+   (-> db
+       ;; Provide an empty container for markers:
+       (assoc-in [:sync-lab :markers] [])
+       (assoc-in [:sync-lab :addresses]
+                 (vec
+                  ;; We need to identify each row for selection purposes:
+                  (map-indexed (fn [i row] (assoc row :id i))
+                               csv-data))))))
+
+(rf/reg-event-fx
+ :sync-lab/process-input-file
+ (fn [db [_ file]]
+   (let [reader (js/FileReader.)]
+     (set! (.-onload reader)
+           #(rf/dispatch [:sync-lab/load-addresses
+                          (-> % .-target .-result csv/parse js->clj csv->map)]))
+     (.readAsText reader file))
+   nil))
+
+; ------------------------------------------------------------------------------
+; Gmap
+
 (rf/reg-event-db
  :sync-lab/clear-map
  (fn [db _]
@@ -34,16 +85,15 @@
  :sync-lab/geocode
  (fn [db _]
    (let [addresses (<sub [:sync-lab/selected-addresses])
-         formatted-addresses
-         (map (fn [{:keys [id logr-tipo logr bairro]}]
-                {:id id
-                 :route-type logr-tipo
-                 :route logr
-                 :neighborhood bairro
-                 :city "Sinop"
-                 :state "MT"
-                 :country "Brasil"})
-              addresses)
+         formatted-addresses 
+         (for [{:keys [id logr-tipo logr bairro]} addresses]
+            {:id id
+             :route-type logr-tipo
+             :route logr
+             :neighborhood bairro
+             :city "Sinop"
+             :state "MT"
+             :country "Brasil"})
          ok (fn [GeocoderResult address]
               (let [ks [:sync-lab :addresses (:id address)]]
                 ((set-state-with-value (conj ks :lat) (geocoder/lat GeocoderResult)))
@@ -53,28 +103,6 @@
       formatted-addresses {:ok ok})
      (assoc-in db [:sync-lab :geocode :ready?] true))))
 
-
-; As we load new addresses we want to clear the markers from the map,
-; since they represent the previously loaded data.
-(rf/reg-event-db
- :sync-lab/load-addresses
- (fn [db [_ csv-]]
-   (clear-markers! (<sub [:query :sync-lab.markers]))
-   (-> db
-       (assoc-in [:sync-lab :markers] [])
-       (assoc-in [:sync-lab :addresses]
-                 (vec
-                  (map-indexed (fn [i row] (assoc row :id i))
-                               csv-))))))
-
-(rf/reg-event-fx
- :sync-lab/process-input-file
- (fn [db [_ file]]
-   (let [reader (js/FileReader.)]
-     (set! (.-onload reader)
-           #(rf/dispatch [:sync-lab/load-addresses (-> % .-target .-result csv/parse js->clj csv->map)]))
-     (.readAsText reader file))
-   nil))
 
 (rf/reg-event-fx
  :sync-lab/create-marker
@@ -126,28 +154,28 @@
          (assoc-in (conj ns- :info-window) info-window)
          (assoc-in (conj ns- :heatmap) heatmap)))))
 
-(defn set-all-selected [db bool]
-  (assoc-in db [:sync-lab :all-selected?] bool))
-
-(defn set-selected-addresses [db val]
-  (update-in db [:sync-lab :addresses]
-    #(mapv (fn [row] (assoc row :selected? val))
-          %)))
-
-(rf/reg-event-db
- :sync-lab/select-all-addresses
- (fn [db _]
-   (if (<sub [:sync-lab/all-selected?])
-     (set-selected-addresses db nil)
-     (set-selected-addresses db true))))
+; ------------------------------------------------------------------------------
+; Subs
+; ------------------------------------------------------------------------------
 
 (rf/reg-sub :sync-lab/gmap query)
-
 (rf/reg-sub :sync-lab/info-window query)
 
 (rf/reg-sub :sync-lab query)
 
 (rf/reg-sub :sync-lab/addresses query)
+(rf/reg-sub :sync-lab/current-page query)
+(rf/reg-sub :sync-lab/rows-per-page query)
+
+
+(rf/reg-sub 
+  :sync-lab/partitioned-addresses
+  :<- [:sync-lab/addresses]
+  :<- [:sync-lab/current-page]
+  :<- [:sync-lab/rows-per-page]
+  ;; TODO: is the arglist correct?
+  (fn [[addresses current-page rows-per-page]]
+    (vec (partition-all rows-per-page addresses))))          
 
 (rf/reg-sub :sync-lab/markers query)
 
@@ -157,20 +185,29 @@
  (fn [addresses]
    (filter :selected? addresses)))
 
+
 (rf/reg-sub
  :sync-lab/all-selected?
  :<- [:sync-lab]
  (fn [sync-lab]
    (every? :selected? (:addresses sync-lab))))
 
+;; Download the csv table.
 (rf/reg-sub
  :sync-lab/downloadable-addresses-url
  :<- [:sync-lab/addresses]
  (fn [addresses]
-   (js/URL.createObjectURL
-     (js/Blob.
-      (clj->js
-       [(to-csv-string
-         (map #(select-keys % [:bairro :logr-tipo :logr :lat :lng]) addresses)
-         {:with-headers true})])
-      (clj->js {:type "text/csv"})))))
+   (let [data (-> (for [row addresses]
+                    (select-keys row [:bairro :logr-tipo :logr :lat :lng]))
+                  (to-csv-string {:with-headers true})
+                  vector
+                  clj->js)
+         blob (js/Blob. data (clj->js {:type "text/csv"}))]
+     (js/URL.createObjectURL blob))))
+   ; (js/URL.createObjectURL
+   ;   (js/Blob.
+   ;    (clj->js
+   ;     [(to-csv-string
+   ;       (map #(select-keys % [:bairro :logr-tipo :logr :lat :lng]) addresses)
+   ;       {:with-headers true})])
+   ;    (clj->js {:type "text/csv"})))))

@@ -13,4 +13,6 @@
               :page-color-palette "black"
               :sidebar-background-image "/img/sidebar-5.jpg"
               :sidebar-color-palette "black"
-              :google-api-key "AIzaSyA7ekvGGHxVTwTVcpi073GOERnktqvmYz8"}})
+              :google-api-key "AIzaSyA7ekvGGHxVTwTVcpi073GOERnktqvmYz8"}
+   :sync-lab {:current-page 0
+              :rows-per-page 50}})

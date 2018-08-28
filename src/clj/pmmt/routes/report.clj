@@ -63,7 +63,7 @@
        (db/get-crimes-reports-count-by-crime-group date-range1)
        (db/get-crimes-reports-count-by-crime-group date-range2)))
 
-(defn compare [range1 range2]
+(defn compare* [range1 range2]
   (let [ranges (map #(get-in % [:crime-reports :by-crime-type]) [range1 range2])]
     {:count
      {:old (get-in range1 [:crime-reports :count])
@@ -111,7 +111,7 @@
         range2 (when-let [range2 (:range2 params)]
                  (process-range range2 params))]
     {:ranges [range1 range2]
-     :compare (compare range1 range2)}))
+     :compare (compare* range1 range2)}))
 
 ; response handler ----------------------------------------------------------
 

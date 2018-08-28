@@ -86,7 +86,7 @@
      [:div.sidebar-wrapper
       [:div.logo
        [:a.logo-text
-        {:href "http://www.pm.mt.gov.br"}
+        {:href "http://localhost:3000"}
         "PMMT"]]
       [:ul.nav
        [sidebar-item :dashboard "Dashboard" [:i.pe-7s-graph] active-panel]
