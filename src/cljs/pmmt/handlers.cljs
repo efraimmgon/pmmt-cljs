@@ -1,16 +1,19 @@
 (ns pmmt.handlers
-  (:require [re-frame.core :refer
-             [reg-event-db reg-event-fx reg-fx]]
-            [ajax.core :as ajax]
-            day8.re-frame.http-fx
-            [pmmt.db :as db]
-            pmmt.handlers.admin
-            pmmt.handlers.geocode
-            pmmt.handlers.geoprocessing
-            pmmt.handlers.login
-            pmmt.handlers.report
-            pmmt.handlers.utils
-            [pmmt.utils :refer [deep-merge-with]]))
+  (:require 
+    [re-frame.core :refer
+     [reg-event-db reg-event-fx reg-fx]]
+    [ajax.core :as ajax]
+    day8.re-frame.http-fx
+    laconic.utils.events
+    [pmmt.db :as db]
+    reframe-forms.events
+    pmmt.handlers.admin
+    pmmt.handlers.geocode
+    pmmt.handlers.geoprocessing
+    pmmt.handlers.login
+    pmmt.handlers.report
+    pmmt.handlers.utils
+    [pmmt.utils :refer [deep-merge-with]]))
 
 ; Custom Coeffects ----------------------------------------------------
 
@@ -42,6 +45,11 @@
  (fn [db [_ event]]
    (js/console.log (str "Not logged in: " event))
    db))
+
+(reg-event-db
+ :dependencies
+ (fn [db [_ dependencies]]
+   (assoc db :dependencies dependencies)))
 
 (reg-event-db
  :modal

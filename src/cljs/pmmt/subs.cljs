@@ -19,7 +19,6 @@
          options)))
 
 ; General ---------------------------------------------------------
-(reg-sub :query query-sub)
 
 (reg-sub
  :get-db

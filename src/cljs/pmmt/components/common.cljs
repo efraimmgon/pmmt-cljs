@@ -1,21 +1,18 @@
 (ns pmmt.components.common
   (:require
    [dommy.core :as dommy :refer-macros [sel sel1]]
-   [goog.net.jsloader :as jsloader]
-   [goog.html.TrustedResourceUrl]
    [reagent.core :as r :refer [atom]]
-   [re-frame.core :refer [dispatch]]))
+   [re-frame.core :as rf :refer [dispatch]]))
 
 ; --------------------------------------------------------------------
 ; Debugging
 ; --------------------------------------------------------------------
 
-(defn pretty-display [title data]
+(defn pretty-display [data]
   [:div
-   [:h3 title]
    [:pre
     (with-out-str
-     (cljs.pprint/pprint @data))]])
+     (cljs.pprint/pprint data))]])
 
 ; --------------------------------------------------------------------
 ; MISC
@@ -263,61 +260,3 @@
           td])))
     rows)))
 
-; --------------------------------------------------------------
-; DOM Manipulation
-; --------------------------------------------------------------
-
-(defn set-attrs! [elt opts]
-  (reduce (fn [elt- [attr val]]
-            (dommy/set-attr! elt- attr val))
-          elt opts))
-
-(defn add-style! [opts]
-  (let [elt (-> (dommy/create-element :link)
-                (dommy/set-attr! :rel "stylesheet")
-                (dommy/set-attr! :type "text/css")
-                (dommy/set-attr! :href (:href opts)))]
-    (dommy/append! (sel1 :head) elt)))
-
-(defn add-script! [opts]
-  (let [elt (-> (dommy/create-element :script)
-                (dommy/set-attr! :type "text/javascript")
-                (dommy/set-attr! :src (:src opts)))]
-    (dommy/append! (sel1 :head) elt)))
-
-; remove a style
-(defn remove-elt! [id]
-  (dommy/remove! (sel1 id)))
-
-(defn filter-loaded [scripts]
-  (reduce (fn [acc [loaded? src]]
-            (if (loaded?) 
-              acc 
-              (conj acc
-                    (goog.html.TrustedResourceUrl/fromConstant 
-                      (goog.string/Const.from src)))))
-          []
-          scripts))
-
-(defn js-loader
-  "Load a supplied list of Javascript files and render a component
-   during loading and another component as soon as every script is
-   loaded.
-
-   Arg map: {:scripts {loaded-test-fn src}
-             :loading component
-             :loaded component}"
-  [{:keys [scripts loading loaded]}]
-  (let [loaded? (atom false)]
-    (r/create-class
-     {:component-did-mount 
-      (fn [_]
-         (let [not-loaded (clj->js (filter-loaded scripts))]
-           (.then (jsloader/safeLoadMany 
-                    not-loaded)
-                  #(do (doseq [x not-loaded]
-                         (js/console.info "Loaded:" (.toString x)))
-                       (reset! loaded? true)))))
-      :reagent-render 
-      (fn [{:keys [scripts loading loaded]}]
-        (if @loaded? loaded loading))})))

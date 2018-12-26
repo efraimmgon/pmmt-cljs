@@ -1,3 +1,5 @@
+(load "pmmt/components/admin/sync_lab/handlers")
+
 ; (in-ns 'pmmt.utils.geocoder)
 ;
 ; @(rf/subscribe [:query :sync-lab.selected-addresses])

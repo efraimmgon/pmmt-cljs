@@ -1,7 +1,7 @@
 (ns pmmt.routes.home
   (:require [pmmt.layout :as layout]
             [pmmt.db.core :as db]
-            [compojure.core :refer [context defroutes GET POST]]
+            [compojure.core :refer [context defroutes GET POST ANY]]
             [ring.util.http-response :as response]
             [clj-time.core :as t]
             [clj-time.format :as tf]
@@ -39,4 +39,5 @@
    (GET "/database" [] (home-page))
    (GET "/users" [] (home-page))
    (GET "/geo" [] (home-page))
-   (GET "/report" [] (home-page))))
+   (GET "/report" [] (home-page))
+   (ANY "/*" [] (home-page))))

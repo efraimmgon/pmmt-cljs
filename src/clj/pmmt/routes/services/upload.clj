@@ -98,10 +98,13 @@
       (update :latitude str->double)
       (update :longitude str->double)))
 
-(defn save-data! [{:keys [tempfile filename content-type] :as file}]
+(defn save-data! 
+  "Coerces the data according to `crime-reports-coercer` and saves it
+  into the db."
+  [{:keys [tempfile filename content-type] :as file}]
   (try
     ;; insert rows into the db
-    (doseq [row (csv->map (csv/read-csv (io/reader tempfile)))]
+    (doseq [row (-> tempfile io/reader csv/read-csv csv->map)]
       (db/create-crime-report! (crime-reports-coercer row)))
     (ok {:result :ok})
     (catch Exception e

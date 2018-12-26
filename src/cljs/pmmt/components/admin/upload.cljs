@@ -28,7 +28,7 @@
  :upload-file
  (fn [{:keys [db]} [_ form-id status]]
    (upload-file! form-id status)
-   {:db db}))
+   nil))
 
 (defn update-db-form []
   (let [status (atom nil)

@@ -3,9 +3,8 @@
    [clojure.string :as string]
    [goog.labs.format.csv :as csv]
    [pmmt.utils.gmaps :refer [clear-markers! create-marker!]]
-   [pmmt.pages.components :refer [set-state-with-value]]
    [pmmt.utils :refer [csv->map query to-csv-string <sub]]
-   [pmmt.utils.geocoder :as geocoder]
+   [pmmt.utils.geocoder :as gc]
    [reagent.core :as r]
    [re-frame.core :as rf]))
 
@@ -32,16 +31,25 @@
 (rf/reg-event-db
  :sync-lab/toggle-selected-addresses
  (fn [db _]
-   (if (<sub [:sync-lab/all-selected?])
-     (set-selected-addresses db nil)
-     (set-selected-addresses db true))))
+   (update-in db [:sync-lab :addresses]
+    #(mapv (fn [row] (assoc row :selected?
+                       (if (<sub [:sync-lab/all-selected?])
+                         false true)))
+          %))))
 
 (rf/reg-event-db
- :sync-lab/select-current-page
+ :sync-lab/toggle-current-page
  (fn [db _]
    (let [current-page (<sub [:sync-lab/current-page])
-         partitioned-addresses (<sub [:sync-lab/partitioned-addresses])]
-     ())))
+         rows-per-page (<sub [:sync-lab/rows-per-page])
+         max (dec (* (inc current-page) rows-per-page))
+         min (- max rows-per-page)]
+     (update-in db [:sync-lab :addresses]
+      #(mapv (fn [row]
+               (if (<= min (:id row) max)
+                 (update row :selected? not)
+                 row))
+             %)))))
 
 
 ; ------------------------------------------------------------------------------
@@ -64,7 +72,7 @@
 
 (rf/reg-event-fx
  :sync-lab/process-input-file
- (fn [db [_ file]]
+ (fn [_ [_ file]]
    (let [reader (js/FileReader.)]
      (set! (.-onload reader)
            #(rf/dispatch [:sync-lab/load-addresses
@@ -86,20 +94,20 @@
  (fn [db _]
    (let [addresses (<sub [:sync-lab/selected-addresses])
          formatted-addresses 
-         (for [{:keys [id logr-tipo logr bairro]} addresses]
+         (for [{:keys [id logr-tipo logr bairro cidade estado]} addresses]
             {:id id
              :route-type logr-tipo
              :route logr
              :neighborhood bairro
-             :city "Sinop"
-             :state "MT"
+             :city cidade
+             :state estado
              :country "Brasil"})
          ok (fn [GeocoderResult address]
-              (let [ks [:sync-lab :addresses (:id address)]]
-                ((set-state-with-value (conj ks :lat) (geocoder/lat GeocoderResult)))
-                ((set-state-with-value (conj ks :lng) (geocoder/lng GeocoderResult)))
-                ((set-state-with-value (conj ks :found) (geocoder/formatted-address GeocoderResult)))))]
-     (geocoder/geocode-addresses
+              (let [path [:sync-lab :addresses (:id address)]]
+                (rf/dispatch [:set (conj path :lat)   (gc/lat GeocoderResult)])
+                (rf/dispatch [:set (conj path :lng)   (gc/lng GeocoderResult)])
+                (rf/dispatch [:set (conj path :found) (gc/formatted-address GeocoderResult)])))]
+     (gc/geocode-addresses
       formatted-addresses {:ok ok})
      (assoc-in db [:sync-lab :geocode :ready?] true))))
 
@@ -198,7 +206,7 @@
  :<- [:sync-lab/addresses]
  (fn [addresses]
    (let [data (-> (for [row addresses]
-                    (select-keys row [:bairro :logr-tipo :logr :lat :lng]))
+                    (select-keys row [:logr-tipo :logr :bairro :cidade :estado :lat :lng]))
                   (to-csv-string {:with-headers true})
                   vector
                   clj->js)

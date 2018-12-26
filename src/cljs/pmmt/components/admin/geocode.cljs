@@ -3,6 +3,7 @@
    [pmmt.macros :refer [log]])
   (:require
    [ajax.core :as ajax]
+   [laconic.utils.core :refer [with-deps]]
    [reagent.core :as r :refer [atom]]
    [re-frame.core :refer [dispatch subscribe]]
    [pmmt.components.common :as c]))
@@ -15,18 +16,6 @@
   (atom {:setup-ready? false}))
 
 ; ----------------------------------------------------------------------
-; Setup
-; ----------------------------------------------------------------------
-
-(defn setup! []
-  (let [setup-ready? (r/cursor local-state [:setup-ready?])
-        google-api-key (subscribe [:settings/google-api-key])]
-    (when-not @setup-ready?
-      (c/add-script!
-       {:src (str "https://maps.googleapis.com/maps/api/js?"
-                  "key=" @google-api-key)})
-      (reset! setup-ready? true))))
-
 ; tipo de logradouro + nome do logradouro + número do lote +
 ; bairro + município + sigla do Estado
 ; "Avenida Governador Júlio Campos, 1111 - Setor Comercial, Sinop - MT, Brasil"
@@ -96,8 +85,7 @@
    (into [:div.content]
          body)])
 
-(defn sync-lat-lng-panel []
-  (setup!)
+(defn sync-lat-lng-panel* []
   (let [result (subscribe [:geocode/result])
         zero-results (subscribe [:geocode/zero-results])
         geocode-ready? (subscribe [:geocode/ready?])]
@@ -112,3 +100,14 @@
           [zero-results-template zero-results]
           ;; crime report rows that were geocoded, right or wrong
           [results-template result]])])))
+
+(defn sync-lat-lng-panel []
+  (r/with-let [google-api-key (subscribe [:settings/google-api-key])]
+    [with-deps
+     {:deps [{:id "google-maps-js"
+              :type "text/javascript"
+              :src (str "https://maps.googleapis.com/maps/api/js?"
+                        "key=" @google-api-key
+                        "&libraries=geometry,visualization")}]
+      :loaded [sync-lat-lng-panel*]
+      :loading [:div.loading "Loading..."]}]))

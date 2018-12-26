@@ -18,32 +18,23 @@
 (defn lng [GeocoderResult]
   (-> GeocoderResult (get 0) .-geometry .-location .lng))
 
-
-(defn maybe-return [& args]
-  (when (first args)
-    (apply str args)))
-
 (defn join-address-components [sep coll]
   (->> coll
-       (remove nil?)
+       (remove string/blank?)
        (string/join sep)))
 
 (defn geocoder-request-address
   [{:keys [route-type route route-number neighborhood
            city state country zip-code]}]
-  (let [one (join-address-components " "
-             [(maybe-return route-type)
-              (maybe-return route)])
+  (let [one (join-address-components " " [route-type, route])
         two (join-address-components ", "
-             [(maybe-return route-number)
-              (maybe-return neighborhood)
-              (maybe-return city)
-              (maybe-return state)
-              (maybe-return country)
-              (maybe-return zip-code)])]
+             [route-number
+              neighborhood
+              city
+              state
+              country
+              zip-code])]
     (string/join ", " [one two])))
-    ; (string/join ", "
-    ;  (concat one two))))
 
 
 ; ------------------------------------------------------------------------------
@@ -79,12 +70,12 @@
         query-limit (or query-limit #(println "OVER_QUERY_LIMIT"))
         zero-results (or zero-results #(println "ZERO RESULTS for: " formatted-address))
         handler (fn [GeocoderResult status]
-                  (condp = status
-                         "OK" (ok GeocoderResult address)
-                         "OVER_QUERY_LIMIT" (query-limit GeocoderResult)
-                         "ZERO_RESULTS" (zero-results GeocoderResult)
-                         ;; default
-                         (println "DEFAULT => " status)))]
+                  (case status
+                    "OK" (ok GeocoderResult address)
+                    "OVER_QUERY_LIMIT" (query-limit GeocoderResult)
+                    "ZERO_RESULTS" (zero-results GeocoderResult)
+                    ;; default
+                    (println "DEFAULT => " status)))]
     (.geocode geocoder opts handler)))
 
 (defn geocode-addresses
@@ -100,18 +91,18 @@
         query-limit (or query-limit #(println "OVER_QUERY_LIMIT"))
         f (fn f [addresses queries query-limit?]
             (cond
-              ; js/google.maps.Geocoder returned OVER_QUERY_LIMIT
+              ;; js/google.maps.Geocoder returned OVER_QUERY_LIMIT
               @query-limit? (query-limit)
 
-              ; NOTE: <implementatian simplicity> each `n` queries we wait
-              ;       for 5 seconds before continuing execution so we don't
-              ;       exceed our 50 queries/s limit.
+              ;; NOTE: <implementatian simplicity> each `n` queries we wait
+              ;;       for 5 seconds before continuing execution so we don't
+              ;;       exceed our 50 queries/s limit.
               (= queries 10)
               (js/setTimeout
                #(f addresses 0 query-limit?)
-               5000)
+               20000)
 
-              ; still addresses left to geocode?
+              ;; still addresses left to geocode?
               (seq addresses)
               (do (geocode-address {:address (first addresses)
                                     :ok ok

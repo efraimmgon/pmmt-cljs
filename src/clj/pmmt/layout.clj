@@ -4,7 +4,8 @@
             [markdown.core :refer [md-to-html-string]]
             [ring.util.http-response :refer [content-type ok]]
             [ring.util.anti-forgery :refer [anti-forgery-field]]
-            [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]))
+            [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
+            [pmmt.config :refer [env]]))
 
 (declare ^:dynamic *identity*)
 (declare ^:dynamic *app-context*)
@@ -23,7 +24,8 @@
           :page template
           :csrf-token *anti-forgery-token*
           :servlet-context *app-context*
-          :identity *identity*)))
+          :identity *identity*
+          :google-api-key (env :google-api-key))))
     "text/html; charset=utf-8"))
 
 (defn error-page

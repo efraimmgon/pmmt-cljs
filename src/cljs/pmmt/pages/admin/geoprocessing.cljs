@@ -1,6 +1,7 @@
 (ns pmmt.pages.admin.geoprocessing
   (:require
    [clojure.string :as string]
+   [laconic.utils.core :refer [with-deps]]
    [reagent.core :as r :refer [atom]]
    [reagent-forms.core :refer [bind-fields]]
    [re-frame.core :as rf :refer
@@ -189,9 +190,11 @@
   (dispatch-sync [:query-crimes])
   (r/with-let [show-table? (subscribe [:show-table?])
                google-api-key (subscribe [:settings/google-api-key])]
-    [c/js-loader
-     {:scripts {#(exists? js/google) (str "https://maps.googleapis.com/maps/api/js?"
-                                          "key=" @google-api-key
-                                          "&libraries=geometry,visualization")}
+    [with-deps
+     {:deps [{:id "google-maps-js"
+              :type "text/javascript"
+              :src (str "https://maps.googleapis.com/maps/api/js?"
+                        "key=" @google-api-key
+                        "&libraries=geometry,visualization")}]
       :loading [:div.loading "Loading..."]
       :loaded [content- show-table?]}]))
