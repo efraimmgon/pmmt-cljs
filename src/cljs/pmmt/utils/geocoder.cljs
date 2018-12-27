@@ -72,8 +72,8 @@
         handler (fn [GeocoderResult status]
                   (case status
                     "OK" (ok GeocoderResult address)
-                    "OVER_QUERY_LIMIT" (query-limit GeocoderResult)
-                    "ZERO_RESULTS" (zero-results GeocoderResult)
+                    "OVER_QUERY_LIMIT" (query-limit GeocoderResult address)
+                    "ZERO_RESULTS" (zero-results GeocoderResult address)
                     ;; default
                     (println "DEFAULT => " status)))]
     (.geocode geocoder opts handler)))

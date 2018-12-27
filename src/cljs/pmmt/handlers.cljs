@@ -4,7 +4,7 @@
      [reg-event-db reg-event-fx reg-fx]]
     [ajax.core :as ajax]
     day8.re-frame.http-fx
-    laconic.utils.events
+    [laconic.utils.events]
     [pmmt.db :as db]
     reframe-forms.events
     pmmt.handlers.admin

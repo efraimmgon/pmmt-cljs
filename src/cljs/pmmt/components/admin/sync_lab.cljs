@@ -16,8 +16,8 @@
 
 ; TODO fetch :lat and :lng from db
 (defn add-default-position [row]
-  (assoc row :lat -11.855275
-             :lng -55.505966))
+  (assoc row :lat -9.9487194
+             :lng -54.9140229))
 
 ; ------------------------------------------------------------------------------
 ; Views
@@ -73,6 +73,25 @@
 ; ------------------------------------------------------------------------------
 ; Addresses table
 
+(defn geocode-status-modal []
+  (r/with-let [rows (rf/subscribe [:query :sync-lab.geocode.status/progress])
+               done (rf/subscribe [:query :sync-lab.geocode.status/done])]
+    [c/modal
+     [:div "Geocode status"]
+     [:div
+      (if @done
+        [:h4 "DONE"]
+        [:h4 "In progress, please wait."])
+      [:div (count @rows)]
+      [:ol
+       (for [row @rows]          
+         [:li (with-out-str (prn row))])]]
+     [:div
+      [:button.btn.btn-danger
+       {:on-click #(rf/dispatch [:remove-modal])
+        :disabled (if @done false true)}
+       "Close"]]]))
+
 (defn addresses-actions []
   (r/with-let [selected (rf/subscribe [:sync-lab/selected-addresses])
                markers (rf/subscribe [:sync-lab/markers])]
@@ -85,8 +104,12 @@
      [:button.btn.btn-info
       {:on-click #(rf/dispatch [:sync-lab/toggle-current-page])}
       "Toggle current page"] " "
+     
      [:button.btn.btn-primary
-      {:on-click #(rf/dispatch [:sync-lab/geocode])
+      {:on-click #(do
+                    (rf/dispatch-sync [:set :sync-lab.geocode.status/progress []])
+                    (rf/dispatch [:modal geocode-status-modal])
+                    (rf/dispatch [:sync-lab/geocode]))
        :class (when (empty? @selected) "disabled")}
       "Geocode selected"] " "
      [:button.btn.btn-default
@@ -148,7 +171,8 @@
                partitioned-addresses (rf/subscribe [:sync-lab/partitioned-addresses])
                markers (rf/subscribe [:query :sync-lab.markers])
                gMap (rf/subscribe [:query :sync-lab.gmap])
-               current-page (rf/subscribe [:sync-lab/current-page])]
+               current-page (rf/subscribe [:sync-lab/current-page])
+               geo (rf/subscribe [:query :sync-lab.geocode])]
     ; The google maps canvas is initialized every time the component is
     ; reloaded, losing all data. We set the saved marker instances to the
     ; saved gmap instance to display them.
@@ -159,8 +183,6 @@
     (when (seq @partitioned-addresses)
       [:div.card
        [:div.content
-        ;[c/pretty-display @(rf/subscribe [:query [:page/loaded-deps]])]
-        ;[c/pretty-display @(rf/subscribe [:query [:sync-lab :addresses 0]])]
         [addresses-actions]
         [pager (count @partitioned-addresses) current-page]
         [addresses-table (get @partitioned-addresses @current-page)]

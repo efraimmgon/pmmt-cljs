@@ -37,7 +37,7 @@
                  [org.webjars/webjars-locator-jboss-vfs "0.1.0"]
                  [prismatic/dommy "1.1.0"]
                  [reagent-utils "0.2.0"]
-                 [reagent "0.7.0"]
+                 [reagent "0.8.1"]
                  [reagent-forms "0.5.29"]
                  [re-frame "0.10.2"]
                  [reframe-forms "0.1.0-SNAPSHOT"]
@@ -130,7 +130,8 @@
                   :doo {:build "test"}
                   :source-paths ["env/dev/clj" "test/clj"]
                   :resource-paths ["env/dev/resources"]
-                  :repl-options {:init-ns user}
+                  :repl-options {:init-ns user
+                                 :timeout 120000}
                   :injections [(require 'pjstadig.humane-test-output)
                                (pjstadig.humane-test-output/activate!)]}
    :project/test {:resource-paths ["env/dev/resources" "env/test/resources"]

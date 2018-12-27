@@ -1,5 +1,6 @@
 (ns pmmt.pages.components
   (:require
+   [cljs.pprint :as pp]
    [cljs.reader :as reader]
    [pmmt.utils :refer [make-keys <sub]]
    [reagent.core :as r :refer [atom]]
@@ -13,7 +14,7 @@
   [:div
    [:pre
     (with-out-str
-     (cljs.pprint/pprint @data))]])
+     (pp/pprint @data))]])
 
 ; ------------------------------------------------------------------------------
 ; Forms

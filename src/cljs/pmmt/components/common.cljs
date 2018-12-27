@@ -1,5 +1,6 @@
 (ns pmmt.components.common
   (:require
+   [cljs.pprint :as pp]
    [dommy.core :as dommy :refer-macros [sel sel1]]
    [reagent.core :as r :refer [atom]]
    [re-frame.core :as rf :refer [dispatch]]))
@@ -9,10 +10,9 @@
 ; --------------------------------------------------------------------
 
 (defn pretty-display [data]
-  [:div
-   [:pre
-    (with-out-str
-     (cljs.pprint/pprint data))]])
+ [:pre
+  (with-out-str
+   (pp/pprint data))])
 
 ; --------------------------------------------------------------------
 ; MISC

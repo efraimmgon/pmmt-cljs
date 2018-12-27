@@ -102,13 +102,25 @@
              :city cidade
              :state estado
              :country "Brasil"})
+         done #(rf/dispatch [:set :sync-lab.geocode.status/done true])
+         query-limit #(rf/dispatch [:update :sync-lab.geocode.status/progress 
+                                    (fn [coll] (conj coll "OVER QUERY LIMIT"))])
+         zero-results #(rf/dispatch [:update :sync-lab.geocode.status/progress 
+                                     (fn [coll] (conj coll ["ZERO RESULTS" %1]))])
          ok (fn [GeocoderResult address]
               (let [path [:sync-lab :addresses (:id address)]]
+                (rf/dispatch [:update :sync-lab.geocode.status/progress 
+                              (fn [coll] (conj coll :ok))])
                 (rf/dispatch [:set (conj path :lat)   (gc/lat GeocoderResult)])
                 (rf/dispatch [:set (conj path :lng)   (gc/lng GeocoderResult)])
                 (rf/dispatch [:set (conj path :found) (gc/formatted-address GeocoderResult)])))]
+         
      (gc/geocode-addresses
-      formatted-addresses {:ok ok})
+      formatted-addresses 
+      {:ok ok
+       :done done
+       :query-limit query-limit
+       :zero-results zero-results})
      (assoc-in db [:sync-lab :geocode :ready?] true))))
 
 
@@ -144,9 +156,20 @@
                   (<sub [:sync-lab/selected-addresses]))])
    nil))
 
+(rf/reg-event-fx
+  :gmap/center-on-current-location
+  (fn [_ [_ gmap]]
+    (when-let [geolocation (.-geolocation js/navigator)]
+      (.getCurrentPosition geolocation
+        (fn [position]
+          (.setCenter gmap
+              #js {:lat (-> position .-coords .-latitude)
+                   :lng (-> position .-coords .-longitude)}))))
+    nil))
+
 (rf/reg-event-db
  :init-map
- (fn [db [_ ns- comp]]
+ (fn [db [_ path comp]]
    (let [canvas (r/dom-node comp)
          ;; default map values (Sinop, MT, BR)
          map-opts (clj->js {:center {:lat -11.855275, :lng -55.505966}
@@ -157,10 +180,11 @@
          heatmap (js/google.maps.visualization.HeatmapLayer.)
          gmap (js/google.maps.Map. canvas map-opts)
          info-window (js/google.maps.InfoWindow.)]
+     (rf/dispatch [:gmap/center-on-current-location gmap])
      (-> db
-         (assoc-in (conj ns- :gmap) gmap)
-         (assoc-in (conj ns- :info-window) info-window)
-         (assoc-in (conj ns- :heatmap) heatmap)))))
+         (assoc-in (conj path :gmap) gmap)
+         (assoc-in (conj path :info-window) info-window)
+         (assoc-in (conj path :heatmap) heatmap)))))
 
 ; ------------------------------------------------------------------------------
 ; Subs

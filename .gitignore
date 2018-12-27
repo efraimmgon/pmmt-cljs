@@ -12,3 +12,4 @@ profiles.clj
 /log
 *.log
 /repl.clj
+.rebel_deadline_history
