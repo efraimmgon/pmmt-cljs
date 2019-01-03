@@ -18,12 +18,14 @@
   - gMap is an instance of js/google.maps.Map;
   - infoWindow is an instance of js/google.maps.InfoWindow
   - position is a map with two keys: :lat and :lng
+  - label: a string or MarkerLabel obj
   - events is a vector with an event (str) and a callback (fn)"
-  [{:keys [gMap infoWindow position title events]}]
+  [{:keys [gMap drabbagle infoWindow label position title events dragge]}]
   (let [marker (js/google.maps.Marker.
                 (clj->js {:position position,
                           :title title
-                          :draggable true}))]
+                          :draggable draggable
+                          :label label}))]
     (.setMap marker gMap)
     (add-listiner! marker "mouseover" #(.setOpacity marker 0.5))
     (add-listiner! marker "mouseout" #(.setOpacity marker 1))

@@ -127,12 +127,13 @@
 
 (defn addresses-table [addresses]
   [:table.table.table-striped
-   [c/thead ["Select" "Bairro" "Tipo de logradouro" "Logradouro" "Latitude" "Longitude" "Show on map"]]
+   [c/thead ["ID" "Select" "Bairro" "Tipo de logradouro" "Logradouro" "Latitude" "Longitude" "Show on map"]]
    [:tbody
     (for [[i row] (map vector (range) addresses)
           :let [path [:sync-lab :addresses (:id row)]]]
       ^{:key (:id row)}
       [:tr
+       [:td (:id row)]
        [:td
         [input {:type :checkbox
                 :name (conj path :selected?)

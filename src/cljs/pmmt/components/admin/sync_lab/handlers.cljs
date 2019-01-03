@@ -55,6 +55,12 @@
 ; ------------------------------------------------------------------------------
 ; File Processing
 
+(defn parse-number [string]
+  (when-not (empty? string)
+    (let [parsed (js/parseFloat string)]
+      (when-not (js/isNaN parsed)
+        parsed))))
+
 (rf/reg-event-db
  :sync-lab/load-addresses
  (fn [db [_ csv-data]]
@@ -67,7 +73,11 @@
        (assoc-in [:sync-lab :addresses]
                  (vec
                   ;; We need to identify each row for selection purposes:
-                  (map-indexed (fn [i row] (assoc row :id i))
+                  (map-indexed (fn [i row] 
+                                 (-> row
+                                     (assoc :id i)
+                                     (update :lat parse-number)
+                                     (update :lng parse-number)))
                                csv-data))))))
 
 (rf/reg-event-fx
@@ -126,14 +136,12 @@
 
 (rf/reg-event-fx
  :sync-lab/create-marker
- (fn [{:keys [db]} [_ {:keys [title position events]}]]
-   (let [marker
-         (create-marker! {:gMap (get-in db [:sync-lab :gmap])
-                          :infoWindow (get-in db [:sync-lab :info-window])
-                          :position position
-                          :title title
-                          :events events})]
-     {:db (update-in db [:sync-lab :markers] conj marker)})))
+ (fn [{:keys [db]} [_ opts]]
+   {:db (update-in db [:sync-lab :markers] conj 
+                   (-> opts
+                       (merge {:gMap (get-in db [:sync-lab :gmap])
+                               :infoWindow (get-in db [:sync-lab :info-window])})
+                       create-marker!))}))
 
 (rf/reg-event-fx
  :sync-lab/create-markers
@@ -142,6 +150,8 @@
      (let [ks [:sync-lab :addresses (:id row)]]
        (rf/dispatch [:sync-lab/create-marker
                        {:title (str (:logr-tipo row) " " (:logr row) ", " (:bairro row))
+                        :label (str (:id row))
+                        :draggable true
                         :position (select-keys row [:lat :lng])
                         :events [["dragend" #(do (rf/dispatch [:set-state (conj ks :lat) (-> % .-latLng .lat)])
                                                  (rf/dispatch [:set-state (conj ks :lng) (-> % .-latLng .lng)]))]]}])))
@@ -174,8 +184,7 @@
          ;; default map values (Sinop, MT, BR)
          map-opts (clj->js {:center {:lat -11.855275, :lng -55.505966}
                             :zoom 14
-                            :mapTypeid js/google.maps.MapTypeId.ROADMAP
-                            :scrollwheel false})
+                            :mapTypeid js/google.maps.MapTypeId.ROADMAP})
          ;;; initialize google maps assets
          heatmap (js/google.maps.visualization.HeatmapLayer.)
          gmap (js/google.maps.Map. canvas map-opts)
